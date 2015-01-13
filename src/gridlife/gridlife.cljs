@@ -4,60 +4,109 @@
 
 (enable-console-print!)
 
-(def app-state (atom {:grid-model {}}))
+(def app-state (atom {:grid-model {},
+                      :cell-size 20,
+                      :grid-width 20,
+                      :grid-height 20,
+                      :line-width 2
+                      }))
 
-(defn black? [node]
-  (= (:color node) :black))
-
-(defn white? [node]
-  (= (:color node) :white))
-
-(defn langton-tick [model]
-  (map #(:color %) (keys model))
+(defn random-int [min max]
+  (+ min (.floor js/Math (* (.random js/Math) (+ 1 (- max min)))))
   )
 
-(defn populate-grid [cells]
-  (let [keys (for [x (range 0 cells)
-                   y (range 0 cells)]
+(defn random-x []
+  (random-int 0, (- (:grid-width @app-state) 1))
+  )
+
+(defn random-y []
+  (random-int 0, (- (:grid-height @app-state) 1))
+  )
+
+(defn toggle [color]
+  (if (= color :white) :black :white))
+
+(defn langton-tick [model]
+  (let [random-coord {:x (random-x) :y (random-y)}
+        new-color (toggle (get model random-coord))
+        new-model (assoc model random-coord new-color)]
+    new-model
+    )
+  )
+
+(defn populate-grid [xsize ysize]
+  (let [keys (for [x (range 0 xsize)
+                   y (range 0 ysize)]
                     {:x x, :y y})]
     (zipmap keys (repeat :white)))
   )
 
-(defn drawBoard [cell-size grid-size-in-cells]
-  (let [line-width 2
-        px-dimension (* cell-size grid-size-in-cells)
-        bg-canvas (. js/document (getElementById "bgcanvas"))
-        bg-context (. bg-canvas (getContext "2d"))]
-  (for [x (range 0 px-dimension cell-size)]
-    (do
-      (. bg-context (moveTo (+ x line-width) line-width))
-      (. bg-context (lineTo (+ x line-width) (+ px-dimension line-width)))
-      (. bg-context (moveTo line-width (+ x line-width)))
-      (. bg-context (lineTo (+ px-dimension line-width) (+ x line-width))))
-    )
+(defn draw-grid [app]
+  (let [line-width (:line-width @app)
+        cell-size (:cell-size @app)
+        grid-width (:grid-width @app)
+        grid-height (:grid-height @app)
+        px-width (* cell-size grid-width)
+        px-height (* cell-size grid-height)
+        bg-canvas (.getElementById js/document "bgcanvas")
+        bg-context (.getContext bg-canvas "2d")]
+  (doseq [x (range 0 (+ px-width cell-size) cell-size)]
+    (let [fromx (+ x line-width)
+          fromy line-width
+          tox (+ x line-width)
+          toy (+ px-height line-width)]
+      (.moveTo bg-context fromx fromy)
+      (.lineTo bg-context tox toy)
+      ))
+  (doseq [y (range 0 (+ px-height cell-size) cell-size)]
+    (let [fromx line-width
+          fromy (+ y line-width)
+          tox (+ px-width line-width)
+          toy (+ y line-width)]
+      (.moveTo bg-context fromx fromy)
+      (.lineTo bg-context tox toy)
+      ))
   (set! (.-lineWidth bg-context) line-width)
-  (set! (.-strokeStyle bg-context) line-width)
+  (set! (.-strokeStyle bg-context) "black")
   (.stroke bg-context)
   ))
 
-(defn langton-grid [app owner]
+(defn paint-cell [app x y color]
+  (let [line-width (:line-width @app)
+        half-line-width (/ (:line-width @app) 2)
+        cell-size (:cell-size @app)
+        xpos (+ line-width half-line-width (* x cell-size))
+        ypos (+ line-width half-line-width (* y cell-size))
+        extent (- cell-size line-width)
+        fg-canvas (.getElementById js/document "fgcanvas")
+        fg-context (.getContext fg-canvas "2d")]
+    (set! (.-fillStyle fg-context) (name color))
+    (.fillRect fg-context xpos ypos extent extent)
+    (.stroke fg-context)
+    ))
+
+(defn paint-cells [app]
+  (doseq [[k v] (:grid-model @app)]
+    (paint-cell app (:x k) (:y k) v))
+  )
+
+(defn langton-grid [app _]
   (reify
     om/IWillMount
     (will-mount [_]
-      (let [cell-size 20
-            grid-size-in-cells 20
-            initial-grid (populate-grid grid-size-in-cells)]
-        (om/transact! app assoc :grid-model initial-grid)
-        (drawBoard cell-size grid-size-in-cells)
+      (let [initial-grid (populate-grid (:grid-width @app) (:grid-height @app))]
+        (om/update! app :grid-model initial-grid)
+        (draw-grid app)
         (js/setInterval
-          (fn [] (om/transact! app assoc :grid-model (langton-tick (:grid-model app)))
-          500)
-        )
+          (fn [] (do
+                   (om/update! app :grid-model (langton-tick (:grid-model @app)))
+                   (paint-cells app)))
+          30)
         ))
     om/IRender
-    (render [this]
+    (render [_]
       (h/html
           [:div]))))
 
 (om/root langton-grid app-state
-         {:target (. js/document (getElementById "controls"))})
+         {:target (.getElementById js/document "controls")})

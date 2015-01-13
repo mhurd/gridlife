@@ -1,1 +1,0 @@
-Number.prototype.toFixed = function (handler) {};
