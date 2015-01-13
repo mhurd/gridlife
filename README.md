@@ -1,4 +1,4 @@
-books
-=====
+gridlife
+========
 
-Photobooks (https://github.com/mhurd/photobooks) site rewrite in Clojure.
+Games of Life: http://gridlife.mhurd.com/
