@@ -3,7 +3,6 @@
 /out
 /classes
 /checkouts
-src/js/books*
 pom.xml
 *.jar
 *.class
@@ -17,5 +16,3 @@ pom.xml
 
 *.iml
 .idea
-test/books/amazon/run_lookup.clj
-src/js/books.js
