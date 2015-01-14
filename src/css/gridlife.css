@@ -13,6 +13,10 @@
     margin: 20px;
 }
 
-.content {
-    padding: 20px;
+#grid {
+    position: relative;
+    margin: 10px;
+}
+
+#content {
 }
