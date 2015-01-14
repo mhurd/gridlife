@@ -45,11 +45,11 @@
     (zipmap keys (repeat :white)))
   )
 
-(defn draw-grid [app]
-  (let [line-width (:line-width @app)
-        cell-size (:cell-px-size @app)
-        cells-wide (:cells-wide @app)
-        cells-high (:cells-high @app)
+(defn draw-grid-lines []
+  (let [line-width (:line-width @app-state)
+        cell-size (:cell-px-size @app-state)
+        cells-wide (:cells-wide @app-state)
+        cells-high (:cells-high @app-state)
         grid-width-px (* cell-size cells-wide)
         grid-height-px (* cell-size cells-high)
         bg-canvas (.getElementById js/document "bgcanvas")
@@ -109,16 +109,19 @@
   (paint-cells)
   )
 
+(defn init-grid-rendering []
+  (draw-grid-lines)
+  (set-request-anim-frame-function)
+  (.requestAnimFrame js/window (fn [] (render-grid)))
+  )
+
 (defn grid-component [app _]
   (reify
     om/IDidMount
     (did-mount [_]
       (let [initial-grid (populate-grid (:cells-wide @app) (:cells-high @app))]
         (om/update! app :grid-model initial-grid)
-        (draw-grid app)
-        (set-request-anim-frame-function)
-        (println (str "requestAnimFrame" (.-requestAnimFrame js/window)))
-        (.requestAnimFrame js/window (fn [] (render-grid)))
+        (init-grid-rendering)
         (js/setInterval
           (fn [] (do
                    (om/update! app :grid-model (langton-tick (:grid-model @app)))))
