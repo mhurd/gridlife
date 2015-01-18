@@ -8,7 +8,8 @@
                       :cell-px-size   15,
                       :cells-wide  40,
                       :cells-high 40,
-                      :line-width  2
+                      :line-width  2,
+                      :run false
                       }))
 
 (defn random-int [min max]
@@ -115,6 +116,16 @@
   (.requestAnimFrame js/window (fn [] (render-grid)))
   )
 
+(defn controls-component [app _]
+  (reify
+    om/IRender
+    (render [_]
+      (h/html
+          [:div {:class "btn-group btn-group-justified"}
+           [:button {:type "button" :on-click #(om/transact! app :run not)} "Start"]
+           ]
+          ))))
+
 (defn grid-component [app _]
   (reify
     om/IDidMount
@@ -124,7 +135,9 @@
         (init-grid-rendering)
         (js/setInterval
           (fn [] (do
-                   (om/update! app :grid-model (langton-tick (:grid-model @app)))))
+                   (if (:run @app)
+                    (om/update! app :grid-model (langton-tick (:grid-model @app)))
+                    nil)))
           30)
         ))
     om/IRender
@@ -136,10 +149,13 @@
             pxwidth (+ double-line-width (* cell-size grid-width))
             pxheight (+ double-line-width (* cell-size grid-height))]
         (h/html
-          [:div {:id "grid"}
+          [:div {:id "grid" :width pxwidth :height pxheight}
            [:canvas {:id "bgcanvas" :class "canvas" :width pxwidth :height pxheight}]
            [:canvas {:id "fgcanvas" :class "canvas" :width pxwidth :height pxheight}]]
           )))))
 
 (om/root grid-component app-state
          {:target (.getElementById js/document "content")})
+
+(om/root controls-component app-state
+         {:target (.getElementById js/document "controls")})
