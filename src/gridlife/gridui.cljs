@@ -1,50 +1,18 @@
-(ns gridlife
+(ns gridlife.gridui
   (:require [om.core :as om :include-macros true]
-            [sablono.core :as h :refer-macros [html]]))
+            [sablono.core :as h :refer-macros [html]]
+            [gridlife.gridmodel :as model :refer [populate-grid]]
+            [gridlife.langton :as langdon :refer [tick]]))
 
 (enable-console-print!)
 
 (def app-state (atom {:grid-model  {},
-                      :cell-px-size   15,
-                      :cells-wide  40,
-                      :cells-high 40,
-                      :line-width  2,
+                      :cell-px-size   10,
+                      :cells-wide  60,
+                      :cells-high 60,
+                      :line-width  1,
                       :run false
                       }))
-
-(defn random-int [min max]
-  (+ min (.floor js/Math (* (.random js/Math) (+ 1 (- max min)))))
-  )
-
-(defn random-x []
-  (random-int 0, (- (:cells-wide @app-state) 1))
-  )
-
-(defn random-y []
-  (random-int 0, (- (:cells-high @app-state) 1))
-  )
-
-(defn random-grid-coord []
-  {:x (random-x) :y (random-y)}
-  )
-
-(defn toggle [color]
-  (if (= color :white) :black :white))
-
-(defn langton-tick [model]
-  (let [random-coord (random-grid-coord)
-        new-color (toggle (get model random-coord))
-        new-model (assoc model random-coord new-color)]
-    new-model
-    )
-  )
-
-(defn populate-grid [cells-wide cells-high]
-  (let [keys (for [x (range 0 cells-wide)
-                   y (range 0 cells-high)]
-               {:x x, :y y})]
-    (zipmap keys (repeat :white)))
-  )
 
 (defn draw-grid-lines []
   (let [line-width (:line-width @app-state)
@@ -116,30 +84,33 @@
   (.requestAnimFrame js/window (fn [] (render-grid)))
   )
 
+(defn reset-grid [app]
+  (let [initial-grid (model/populate-grid (:cells-wide app) (:cells-high app))]
+    (om/update! app :grid-model initial-grid)
+    ))
+
 (defn controls-component [app _]
   (reify
     om/IRender
     (render [_]
       (h/html
-          [:div {:class "btn-group btn-group-justified"}
-           [:button {:type "button" :on-click #(om/transact! app :run not)} "Start"]
-           ]
-          ))))
+           [:div {:class "btn-group btn-group-lg" :role "group"}
+            [:button {:class "btn btn-default" :type "button" :on-click #(om/transact! app :run not)} (if (:run app) "Stop" "Start")]
+            [:button {:class "btn btn-default" :type "button" :on-click #(reset-grid app)} "Reset"]]))))
 
 (defn grid-component [app _]
   (reify
     om/IDidMount
     (did-mount [_]
-      (let [initial-grid (populate-grid (:cells-wide @app) (:cells-high @app))]
-        (om/update! app :grid-model initial-grid)
-        (init-grid-rendering)
-        (js/setInterval
-          (fn [] (do
-                   (if (:run @app)
-                    (om/update! app :grid-model (langton-tick (:grid-model @app)))
-                    nil)))
-          30)
-        ))
+      (reset-grid app)
+      (init-grid-rendering)
+      (js/setInterval
+        (fn [] (do
+                 (if (:run @app)
+                  (om/update! app :grid-model (langdon/tick (:grid-model @app)))
+                  nil)))
+        30)
+      )
     om/IRender
     (render [_]
       (let [cell-size (:cell-px-size app)
@@ -149,9 +120,9 @@
             pxwidth (+ double-line-width (* cell-size grid-width))
             pxheight (+ double-line-width (* cell-size grid-height))]
         (h/html
-          [:div {:id "grid" :width pxwidth :height pxheight}
-           [:canvas {:id "bgcanvas" :class "canvas" :width pxwidth :height pxheight}]
-           [:canvas {:id "fgcanvas" :class "canvas" :width pxwidth :height pxheight}]]
+          [:div
+            [:canvas {:id "bgcanvas" :class "canvas" :width pxwidth :height pxheight}]
+            [:canvas {:id "fgcanvas" :class "canvas" :width pxwidth :height pxheight}]]
           )))))
 
 (om/root grid-component app-state

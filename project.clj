@@ -8,12 +8,8 @@
 
   :dependencies [[org.clojure/clojurescript "0.0-2511"]
                  [org.clojure/clojure "1.6.0"]
-                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [om "0.8.0-beta5"]
-                 [secretary "1.2.1"]                        ;; see http://spootnik.org/entries/2014/10/26_from-angularjs-to-om-a-walk-through.html
-                 [sablono "0.2.22"]                         ;; see https://github.com/r0man/sablono
-                 [cljs-ajax "0.3.3"]
-                 [prismatic/om-tools "0.3.6"]]
+                 [sablono "0.2.22"]]
 
   :plugins [[lein-cljsbuild "1.0.3"]
             [lein-marginalia "0.8.0"]]

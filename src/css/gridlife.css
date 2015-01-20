@@ -13,10 +13,9 @@
     margin: 20px;
 }
 
-#grid {
-    position: relative;
-    margin: 10px;
-}
-
-#content {
+#controls {
+    position: absolute;
+    left: 0;
+    top: 610px;
+    margin: 20px;
 }
