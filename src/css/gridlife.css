@@ -1,21 +1,10 @@
-#bgcanvas {
-    z-index: 1;
-}
-
-#fgcanvas {
-    z-index: 2;
-}
-
 .canvas {
-    position: absolute;
-    left: 0;
-    top: 0;
-    margin: 20px;
+    margin-left: 20px;
+    margin-top: 20px;
+    border: black 2px solid;
 }
 
 #controls {
-    position: absolute;
-    left: 0;
-    top: 610px;
-    margin: 20px;
+    margin-left: 20px;
+    margin-top: 10px;
 }
