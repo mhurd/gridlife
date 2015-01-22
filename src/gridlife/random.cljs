@@ -1,4 +1,4 @@
-(ns gridlife.langton
+(ns gridlife.random
   (:require [gridlife.gridmodel :as model :refer [populate-grid]]))
 
 (defn tick [model xsize ysize]

@@ -8,3 +8,11 @@
     margin-left: 20px;
     margin-top: 10px;
 }
+
+#buttons {
+    float: left;
+}
+
+#options {
+    padding-left: 160px;
+}
