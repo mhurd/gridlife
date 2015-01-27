@@ -1,10 +1,21 @@
 (ns gridlife.langton
   (:require [gridlife.gridmodel :as model :refer [populate-grid]]))
 
-(defn tick [model xsize ysize]
-  (let [random-coord (model/random-grid-coord xsize ysize)
-        new-color (model/toggle-if-color (get model random-coord))
-        new-model (assoc model random-coord new-color)]
-    new-model
-    )
-  )
+(defn- move [gridmodel]
+      (let [ant (:langton-ant gridmodel)
+            location (:location ant)
+            heading (:heading ant)
+            model (:model gridmodel)
+            current-cell-contents (get model location)
+            new-heading-f (if (model/white? current-cell-contents) model/turn-left model/turn-right)
+            new-heading (new-heading-f heading)
+            new-model (assoc model location (model/toggle-color current-cell-contents))
+            new-ant (assoc ant :heading new-heading :location (model/new-location gridmodel location new-heading 1))]
+        (assoc gridmodel :model new-model :langton-ant new-ant)
+        )
+      )
+
+(defrecord LangtonAnt [location heading])
+
+(defn tick [gridmodel]
+  (move gridmodel))

@@ -1,16 +1,16 @@
 (ns gridlife.gridui
   (:require [om.core :as om :include-macros true]
             [sablono.core :as h :refer-macros [html]]
-            [gridlife.gridmodel :as model :refer [populate-grid]]
-            [gridlife.langton :as langdon :refer [tick]]
+            [gridlife.gridmodel :as model :refer [populate-grid GridModel]]
+            [gridlife.langton :as langton :refer [tick]]
             [gridlife.random :as random :refer [tick]]))
 
 (enable-console-print!)
 
-(def app-state (atom {:grid-model   {},
+(defn default-ant [] (langton/LangtonAnt. {:x 30 :y 30} :north))
+
+(def app-state (atom {:gridmodel    (GridModel. {} 60 60 (default-ant)),
                       :cell-px-size 10,
-                      :cells-wide   60,
-                      :cells-high   60,
                       :run          false
                       }))
 
@@ -26,10 +26,16 @@
     ))
 
 (defn paint-cells []
-  (let [model (:grid-model @app-state)]
+  (let [gridmodel (:gridmodel @app-state)
+        model (:model gridmodel)
+        ant (:langton-ant gridmodel)]
     (doseq [[k v] model]
       (paint-cell (:x k) (:y k) v))
-    )
+    (if (nil? ant)
+      nil
+      (let [location (:location ant)]
+        (paint-cell (:x location) (:y location) "red")
+        )))
   )
 
 (defn set-request-anim-frame-function []
@@ -44,10 +50,8 @@
 
 (defn render-grid [app]
   (if (:run @app)
-    (let [model (:grid-model @app)
-          xsize (:cells-wide @app)
-          ysize (:cells-high @app)]
-      (om/update! app :grid-model (langdon/tick model xsize ysize))
+    (do
+      (om/update! app :gridmodel (langton/tick (:gridmodel @app)))
       (paint-cells))
     nil)
   (.requestAnimFrame js/window (fn [] (render-grid app))))
@@ -58,8 +62,8 @@
   )
 
 (defn reset-grid [app]
-  (let [initial-grid (model/populate-grid (:cells-wide app) (:cells-high app))]
-    (om/update! app :grid-model initial-grid)
+  (let [initial-grid (model/populate-grid (:gridmodel @app))]
+    (om/update! app :gridmodel (assoc initial-grid :langton-ant (default-ant)))
     (paint-cells)
     ))
 
@@ -68,28 +72,16 @@
     om/IRender
     (render [_]
       (let [cell-size (:cell-px-size app)
-            grid-width (:cells-wide app)
-            grid-height (:cells-high app)
-            pxwidth (* cell-size grid-width)
-            pxheight (* cell-size grid-height)]
+            cells-wide (:cells-wide (:gridmodel @app))
+            cells-high (:cells-high (:gridmodel @app))
+            pxwidth (* cell-size cells-wide)
+            pxheight (* cell-size cells-high)]
         (h/html
           [:div {:width pxwidth :height pxheight}
            [:div {:id "buttons" :class "btn-group btn-group-lg" :role "group"}
             [:button {:class "btn btn-default" :type "button" :on-click #(om/transact! app :run not)} (if (:run app) "Stop" "Start")]
             [:button {:class "btn btn-default" :type "button" :on-click #(reset-grid app)} "Reset"]]
-           [:div {:id "options"}
-            [:div {:class "radio"}
-             [:label
-              [:input {:type "radio" :name "game" :id "random-game" :value "random-game" :checked "checked"}]
-              "animate with random black and white cells"
-              ]
-             ]
-            [:div {:class "radio disabled"}
-             [:label
-              [:input {:type "radio" :name "game" :id "langdon-game" :value "langdon-game"}]
-              "release the Langdon Rat!"
-              ]]
-            ]])))))
+           ])))))
 
 (defn grid-component [app _]
   (reify
@@ -100,10 +92,10 @@
     om/IRender
     (render [_]
       (let [cell-size (:cell-px-size app)
-            grid-width (:cells-wide app)
-            grid-height (:cells-high app)
-            pxwidth (* cell-size grid-width)
-            pxheight (* cell-size grid-height)]
+            cells-wide (:cells-wide (:gridmodel @app))
+            cells-high (:cells-high (:gridmodel @app))
+            pxwidth (* cell-size cells-wide)
+            pxheight (* cell-size cells-high)]
         (h/html
           [:div
            [:canvas {:id "canvas" :class "canvas" :width pxwidth :height pxheight}]]
