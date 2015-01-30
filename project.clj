@@ -8,6 +8,7 @@
 
   :dependencies [[org.clojure/clojurescript "0.0-2511"]
                  [org.clojure/clojure "1.6.0"]
+                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [om "0.8.0-beta5"]
                  [sablono "0.2.22"]]
 

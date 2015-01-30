@@ -1,54 +1,59 @@
 (ns gridlife.gridui
-  (:require [om.core :as om :include-macros true]
-            [sablono.core :as h :refer-macros [html]]
-            [gridlife.gridmodel :as model :refer [populate-grid GridModel]]
-            [gridlife.langton :as langton :refer [tick]]
-            [gridlife.random :as random :refer [tick]]))
+  (:require-macros [cljs.core.async.macros :refer [go]])
+  (:require
+    [om.core :as om :include-macros true]
+    [sablono.core :as h :refer-macros [html]]
+    [gridlife.gridmodel :as model :refer [GridModel]]
+    [gridlife.langton :as langton :refer [tick]]
+    [cljs.core.async :refer [put! chan <!]]))
 
 (enable-console-print!)
 
-(defn default-ant [] (langton/LangtonAnt. {:x 50 :y 50} :north))
+(defn empty-model [cells-wide cells-high]
+  (let [keys (for [x (range 0 cells-wide)
+                   y (range 0 cells-high)]
+               {:x x, :y y})]
+    (zipmap keys (repeat :white)))
+  )
 
-(def app-state (atom {:gridmodel    (GridModel. {} {} 100 100 (default-ant)),
-                      :cell-px-size 5,
+(def cells-wide 120)
+(def cells-high 120)
+(def cell-size 6)
+
+(defn default-ant [] (langton/LangtonAnt. {:x (/ cells-wide 2) :y (/ cells-high 2)} :north))
+
+(defn empty-gridmodel []
+  (model/GridModel. (empty-model cells-wide cells-high) cells-wide cells-high (default-ant))
+  )
+
+(def app-state (atom {:gridmodel    (empty-gridmodel),
+                      :cell-px-size cell-size,
                       :run          false
                       }))
 
-(defn get-rgb-from-visited-count [count]
-  (if (= count 0)
-    "rgb(255,255,255)"
-    (let [value (- 245 (* 4 count))
-          modified (if (< value 0) 0 value)]
-      (str "rgb(" modified "," modified "," modified ")")
-      )
-    )
-  )
+(def render-chan (chan))
 
-(defn paint-cell [gridmodel x y color]
+(defn paint-cell [x y color]
   (let [cell-size (:cell-px-size @app-state)
         x-px-pos (* x cell-size)
         y-px-pos (* y cell-size)
         canvas (.getElementById js/document "canvas")
-        context (.getContext canvas "2d")
-        visited-count (get (:visited-counts gridmodel) {:x x :y y})
-        actual-count (if (nil? visited-count) 0 visited-count)
-        paint-color (if (nil? color) (get-rgb-from-visited-count actual-count) color)]
-    (set! (.-fillStyle context) paint-color)
+        context (.getContext canvas "2d")]
+    (set! (.-fillStyle context) color)
     (.fillRect context x-px-pos y-px-pos cell-size cell-size)
-    (.stroke context)
-    ))
+    (.stroke context))
+  )
 
-(defn paint-cells []
-  (let [gridmodel (:gridmodel @app-state)
-        model (:model gridmodel)
-        ant (:langton-ant gridmodel)]
-    (doseq [[k _] model]
-      (paint-cell gridmodel (:x k) (:y k) nil))
-    (if (nil? ant)
-      nil
-      (let [location (:location ant)]
-        (paint-cell gridmodel (:x location) (:y location) "red")
-        )))
+(defn reset-grid [app]
+  (om/update! app :gridmodel (empty-gridmodel))
+  (doseq [location (keys (:model (:gridmodel app)))] (paint-cell (:x location) (:y location) "white"))
+  )
+
+(defn handle-render-cell []
+  (go (loop []
+        (let [[cell color] (<! render-chan)]
+          (paint-cell (:x cell) (:y cell) color)
+          (recur))))
   )
 
 (defn set-request-anim-frame-function []
@@ -61,24 +66,20 @@
     (set! (.-requestAnimFrame js/window) use)
     ))
 
-(defn render-grid [app]
+(defn run-frame [app]
   (if (:run @app)
-    (do
-      (om/update! app :gridmodel (langton/tick (:gridmodel @app)))
-      (paint-cells))
+    (let [[new-gridmodel repaint] (langton/tick (:gridmodel @app))]
+      (om/update! app :gridmodel new-gridmodel)
+      (doseq [location-color repaint] (put! render-chan location-color))
+      )
     nil)
-  (.requestAnimFrame js/window (fn [] (render-grid app))))
+  (.requestAnimFrame js/window (fn [] (run-frame app)))
+  )
 
 (defn init-grid-rendering [app]
   (set-request-anim-frame-function)
-  (.requestAnimFrame js/window (fn [] (render-grid app)))
+  (.requestAnimFrame js/window (fn [] (run-frame app)))
   )
-
-(defn reset-grid [app]
-  (let [initial-grid (model/populate-grid (:gridmodel @app))]
-    (om/update! app :gridmodel (assoc initial-grid :langton-ant (default-ant) :visited-count {}))
-    (paint-cells)
-    ))
 
 (defn controls-component [app _]
   (reify
@@ -101,6 +102,7 @@
     om/IDidMount
     (did-mount [_]
       (reset-grid app)
+      (handle-render-cell)
       (init-grid-rendering app))
     om/IRender
     (render [_]

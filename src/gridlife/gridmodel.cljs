@@ -1,6 +1,6 @@
 (ns gridlife.gridmodel)
 
-(defrecord GridModel [model visited-counts cells-wide cells-high langton-ant])
+(defrecord GridModel [model cells-wide cells-high langton-ant])
 
 (def index->headings {0 :north
                       1 :east
@@ -56,13 +56,6 @@
 
 (defn toggle-if-color [contents]
   (if (color? contents) (toggle-color contents) contents))
-
-(defn populate-grid [gridmodel]
-  (let [keys (for [x (range 0 (:cells-wide gridmodel))
-                   y (range 0 (:cells-high gridmodel))]
-               {:x x, :y y})]
-    (assoc gridmodel :model (zipmap keys (repeat :white))))
-  )
 
 (defn compass [gridmodel location cells]
   (let [cells-wide (:cells-wide gridmodel)

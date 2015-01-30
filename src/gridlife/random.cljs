@@ -1,5 +1,5 @@
 (ns gridlife.random
-  (:require [gridlife.gridmodel :as model :refer [populate-grid]]))
+  (:require [gridlife.gridmodel :as model]))
 
 (defn tick [gridmodel]
   (let [cells-wide (:cells-wide gridmodel)
