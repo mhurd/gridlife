@@ -1,6 +1,6 @@
 (ns gridlife.gridmodel)
 
-(defrecord GridModel [model cells-wide cells-high langton-ant])
+(defrecord GridModel [model visited-counts cells-wide cells-high langton-ant])
 
 (def index->headings {0 :north
                       1 :east
@@ -63,11 +63,6 @@
                {:x x, :y y})]
     (assoc gridmodel :model (zipmap keys (repeat :white))))
   )
-
-(defn north? [h] (= :north h))
-(defn south? [h] (= :south h))
-(defn east? [h] (= :east h))
-(defn west? [h] (= :west h))
 
 (defn compass [gridmodel location cells]
   (let [cells-wide (:cells-wide gridmodel)

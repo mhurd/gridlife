@@ -7,20 +7,33 @@
 
 (enable-console-print!)
 
-(defn default-ant [] (langton/LangtonAnt. {:x 30 :y 30} :north))
+(defn default-ant [] (langton/LangtonAnt. {:x 50 :y 50} :north))
 
-(def app-state (atom {:gridmodel    (GridModel. {} 60 60 (default-ant)),
-                      :cell-px-size 10,
+(def app-state (atom {:gridmodel    (GridModel. {} {} 100 100 (default-ant)),
+                      :cell-px-size 5,
                       :run          false
                       }))
 
-(defn paint-cell [x y color]
+(defn get-rgb-from-visited-count [count]
+  (if (= count 0)
+    "rgb(255,255,255)"
+    (let [value (- 245 (* 2 count))
+          modified (if (< value 0) 0 value)]
+      (str "rgb(" modified "," modified "," modified ")")
+      )
+    )
+  )
+
+(defn paint-cell [gridmodel x y color]
   (let [cell-size (:cell-px-size @app-state)
         x-px-pos (* x cell-size)
         y-px-pos (* y cell-size)
         canvas (.getElementById js/document "canvas")
-        context (.getContext canvas "2d")]
-    (set! (.-fillStyle context) (name color))
+        context (.getContext canvas "2d")
+        visited-count (get (:visited-counts gridmodel) {:x x :y y})
+        actual-count (if (nil? visited-count) 0 visited-count)
+        paint-color (if (nil? color) (get-rgb-from-visited-count actual-count) color)]
+    (set! (.-fillStyle context) paint-color)
     (.fillRect context x-px-pos y-px-pos cell-size cell-size)
     (.stroke context)
     ))
@@ -29,12 +42,12 @@
   (let [gridmodel (:gridmodel @app-state)
         model (:model gridmodel)
         ant (:langton-ant gridmodel)]
-    (doseq [[k v] model]
-      (paint-cell (:x k) (:y k) v))
+    (doseq [[k _] model]
+      (paint-cell gridmodel (:x k) (:y k) nil))
     (if (nil? ant)
       nil
       (let [location (:location ant)]
-        (paint-cell (:x location) (:y location) "red")
+        (paint-cell gridmodel (:x location) (:y location) "red")
         )))
   )
 
@@ -63,7 +76,7 @@
 
 (defn reset-grid [app]
   (let [initial-grid (model/populate-grid (:gridmodel @app))]
-    (om/update! app :gridmodel (assoc initial-grid :langton-ant (default-ant)))
+    (om/update! app :gridmodel (assoc initial-grid :langton-ant (default-ant) :visited-count {}))
     (paint-cells)
     ))
 
