@@ -17,7 +17,7 @@
 (defn get-rgb-from-visited-count [count]
   (if (= count 0)
     "rgb(255,255,255)"
-    (let [value (- 245 (* 2 count))
+    (let [value (- 245 (* 4 count))
           modified (if (< value 0) 0 value)]
       (str "rgb(" modified "," modified "," modified ")")
       )
