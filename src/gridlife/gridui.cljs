@@ -16,9 +16,9 @@
     (zipmap keys (repeat :white)))
   )
 
-(def cells-wide 120)
-(def cells-high 120)
-(def cell-size 6)
+(def cells-wide 80)
+(def cells-high 80)
+(def cell-size 8)
 
 (defn default-ant [] (langton/LangtonAnt. {:x (/ cells-wide 2) :y (/ cells-high 2)} :north))
 
