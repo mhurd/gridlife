@@ -16,9 +16,9 @@
     (zipmap keys (repeat :white)))
   )
 
-(def cells-wide 80)
-(def cells-high 80)
-(def cell-size 8)
+(def cells-wide 70)
+(def cells-high 70)
+(def cell-size 10)
 
 (defn default-ant [] (langton/LangtonAnt. {:x (/ cells-wide 2) :y (/ cells-high 2)} :north))
 
@@ -66,36 +66,36 @@
     (set! (.-requestAnimFrame js/window) use)
     ))
 
-(defn run-frame [app]
-  (if (:run @app)
-    (let [[new-gridmodel repaint] (langton/tick (:gridmodel @app))]
-      (om/update! app :gridmodel new-gridmodel)
-      (doseq [location-color repaint] (put! render-chan location-color))
-      )
-    nil)
-  (.requestAnimFrame js/window (fn [] (run-frame app)))
+(defn run-frame [app last-time]
+  (let [current-time (.getTime (js/Date.))
+        difference (- current-time last-time)
+        max-moves-per-second 10
+        frame-rate-millis (/ 1000 max-moves-per-second)]
+    (if (and (> difference frame-rate-millis) (:run @app))
+      (let [[new-gridmodel repaint] (langton/tick (:gridmodel @app))]
+        (om/update! app :gridmodel new-gridmodel)
+        (doseq [location-color repaint] (put! render-chan location-color))
+        (.requestAnimFrame js/window (fn [] (run-frame app current-time)))
+        )
+      (.requestAnimFrame js/window (fn [] (run-frame app last-time)))
+    ))
   )
 
 (defn init-grid-rendering [app]
   (set-request-anim-frame-function)
-  (.requestAnimFrame js/window (fn [] (run-frame app)))
+  (.requestAnimFrame js/window (fn [] (run-frame app (.getTime (js/Date.)))))
   )
 
 (defn controls-component [app _]
   (reify
     om/IRender
     (render [_]
-      (let [cell-size (:cell-px-size app)
-            cells-wide (:cells-wide (:gridmodel @app))
-            cells-high (:cells-high (:gridmodel @app))
-            pxwidth (* cell-size cells-wide)
-            pxheight (* cell-size cells-high)]
-        (h/html
-          [:div {:width pxwidth :height pxheight}
+      (h/html
+          [:div
            [:div {:id "buttons" :class "btn-group btn-group-lg" :role "group"}
             [:button {:class "btn btn-default" :type "button" :on-click #(om/transact! app :run not)} (if (:run app) "Stop" "Start")]
             [:button {:class "btn btn-default" :type "button" :on-click #(reset-grid app)} "Reset"]]
-           ])))))
+           ]))))
 
 (defn grid-component [app _]
   (reify

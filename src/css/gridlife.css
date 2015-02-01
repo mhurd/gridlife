@@ -9,10 +9,12 @@
     margin-top: 10px;
 }
 
-#buttons {
-    float: left;
+#intro {
+    margin-left: 20px;
+    margin-top: 10px;
+    width: 700px;
 }
 
-#options {
-    padding-left: 160px;
+#buttons {
+    float: left;
 }
