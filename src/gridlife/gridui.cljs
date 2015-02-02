@@ -1,3 +1,5 @@
+;; ## The OM-based GUI
+
 (ns gridlife.gridui
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require
@@ -9,7 +11,9 @@
 
 (enable-console-print!)
 
-(defn empty-model [cells-wide cells-high]
+(defn empty-model
+  "Creates an empty map of ```{:x 1 :y 2}``` location to contents."
+  [cells-wide cells-high]
   (let [keys (for [x (range 0 cells-wide)
                    y (range 0 cells-high)]
                {:x x, :y y})]
