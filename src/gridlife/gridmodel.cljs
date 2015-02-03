@@ -2,16 +2,19 @@
 ;;
 ;; Defines a record that holds the model (a map of location to contents), the size in cells (width
 ;; and height) and finally the Langton Ant model (this should be factored out).
-
 (ns gridlife.gridmodel)
 
-(defrecord GridModel [model cells-wide cells-high langton-ant])
+;; This record type represents the grid, it holds a model of location to contents mappings and
+;; the width and height of the grid.
+(defrecord GridModel [model cells-wide cells-high])
 
+;; Maps a numeric index to the 4 compass points.
 (def index->headings {0 :north
                       1 :east
                       2 :south
                       3 :west})
 
+;; Maps a compass point to a numeric index.
 (def headings->index {:north 0
                       :east  1
                       :south 2
