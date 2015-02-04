@@ -93,10 +93,8 @@
   "Return a map listing the grid locations of the compass directions at the specified distance from the
   current location. In the form ```{:north {:x 1 :y 1} ... }```. Note that this assumes that the grid
   wraps."
-  [gridmodel location distance]
-  (let [cells-wide (:cells-wide gridmodel)
-        cells-high (:cells-high gridmodel)
-        old-x (:x location)
+  [cells-wide cells-high location distance]
+  (let [old-x (:x location)
         old-y (:y location)]
     {:north {:x old-x :y (mod (- old-y distance) cells-high)}
      :south {:x old-x :y (mod (+ old-y distance) cells-high)}
@@ -107,6 +105,6 @@
 
 (defn new-location
   "Get the new location given the grid, the current location, the compass heading and the distance"
-  [gridmodel location heading distance]
-  (get (compass gridmodel location distance) heading)
+  [cells-wide cells-high location heading distance]
+  (get (compass cells-wide cells-high  location distance) heading)
   )

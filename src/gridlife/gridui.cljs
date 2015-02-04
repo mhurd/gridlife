@@ -8,8 +8,9 @@
     [om.core :as om :include-macros true]
     [sablono.core :as h :refer-macros [html]]
     [gridlife.gridmodel :as model :refer [GridModel]]
-    [gridlife.langton :as langton :refer [tick]]
-    [cljs.core.async :refer [put! chan <!]]))
+    [gridlife.langton :as langton :refer []]
+    [cljs.core.async :refer [put! chan <!]]
+    [gridlife.gamemodel :as gamemodel :refer [game]]))
 
 (enable-console-print!)
 
@@ -23,15 +24,22 @@
   )
 
 ;; Constant defining the number of cells wide the grid should be.
-(def cells-wide 70)
+(def cells-wide 27)
 ;; Constant defining the number of cells high the grid should be.
-(def cells-high 70)
+(def cells-high 27)
 ;; Constant defining the sizein pixels of each cell.
-(def cell-size 8)
+(def cell-size 20)
 
 (defn default-ant
   "Create a new default Langton Ant record (starts in the middle of the grid)"
-  [] (langton/new-ant {:x (/ cells-wide 2) :y (/ cells-high 2)}))
+  []
+  (langton/new-ant {:x (.floor js/Math (/ cells-wide 2)) :y (.floor js/Math (/ cells-high 2))}))
+
+(defn default-games
+  "Getthe default game strategies available for this grid"
+  []
+  [(default-ant)]
+  )
 
 (defn empty-gridmodel []
   "Creates an empty grid model (map of location to contents)"
@@ -43,9 +51,9 @@
 ;; 1. ```:gridmodel``` - the model of the grid mapping locations to cell contents
 ;; 2. ```:langton-ant``` - the model of the current Langton Ant
 ;; 3. ```:run``` - boolean indicating whether the simultaion is currently running
-(def app-state (atom {:gridmodel   (empty-gridmodel),
-                      :langton-ant (default-ant)
-                      :run         false
+(def app-state (atom {:gridmodel (empty-gridmodel),
+                      :games     (default-games)
+                      :run       false
                       }))
 
 ;; The [core-async](https://github.com/clojure/core.async "core.async") channel used
@@ -68,7 +76,7 @@
   "Resets the grid (empty gridmodel and default ant)"
   [app]
   (om/update! app :gridmodel (empty-gridmodel))
-  (om/update! app :langton-ant (default-ant))
+  (om/update! app :games (default-games))
   (doseq [location (keys (:model (:gridmodel app)))] (paint-cell (:x location) (:y location) "white"))
   )
 
@@ -101,12 +109,18 @@
   [app last-time]
   (let [current-time (.getTime (js/Date.))
         difference (- current-time last-time)
-        max-moves-per-second 30
-        frame-rate-millis (/ 1000 max-moves-per-second)]
+        max-moves-per-second 20
+        frame-rate-millis (/ 1000 max-moves-per-second)
+        gridmodel (:gridmodel @app)]
     (if (and (> difference frame-rate-millis) (:run @app))
-      (let [[new-gridmodel new-ant repaint] (langton/tick @app)]
+      (let [[new-gridmodel new-games repaint] (reduce (fn [result game]
+                                                        (let [[gridmodel games repaints] result
+                                                              [next-gridmodel new-game new-repaints] (gamemodel/tick game gridmodel)]
+                                                          [next-gridmodel (cons new-game games) (into repaints new-repaints)]
+                                                          )
+                                                        ) [gridmodel [] []] (:games @app))]
         (om/update! app :gridmodel new-gridmodel)
-        (om/update! app :langton-ant new-ant)
+        (om/update! app :games new-games)
         (doseq [location-color repaint] (put! render-chan location-color))
         (.requestAnimFrame js/window (fn [] (run-frame app current-time)))
         )

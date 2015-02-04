@@ -2,41 +2,34 @@
 ;; This namespace models the behaviour of the Langton Ant as defined on the
 ;; [wikipedia](https://en.wikipedia.org/wiki/Langton's_ant "Langton Ant") page.
 (ns gridlife.langton
-  (:require [gridlife.gridmodel :as model]))
+  (:require [gridlife.gridmodel :as model]
+            [gridlife.gamemodel :as gamemodel]))
 
 ;; Declare the record type that represents the Langton Ant, a location and a heading (compass).
-(defrecord LangtonAnt [location heading])
-
-(defn- move
-  "Move the ant as per the standard rules for Langton's Ants:
-
-  1. At a white square, turn 90 degrees right, flip the color of the square then move forward one unit
-  2. At a black square, turn 90 degrees left, flip the color of the square, then move forward one unit
-  "
-  [gridmodel ant]
-      (let [location (:location ant)
-            heading (:heading ant)
-            model (:model gridmodel)
-            current-cell-contents (get model location)
-            new-cell-contents (model/toggle-color current-cell-contents)
-            new-heading-f (if (model/white? current-cell-contents) model/turn-left model/turn-right)
-            new-heading (new-heading-f heading)
-            new-model (assoc model location new-cell-contents)
-            new-ant (assoc ant :heading new-heading :location (model/new-location gridmodel location new-heading 1))]
-        [(assoc gridmodel :model new-model) new-ant [[(:location new-ant) "red"] [location (name new-cell-contents)]]]
-        )
+(defrecord LangtonAnt [location heading]
+  gamemodel/game
+  (game-name [_] "Langton's Ant")
+  (game-state [_] (str "Langton's Ant: ") location ", " heading)
+  (tick [_ gridmodel]
+    (let [model (:model gridmodel)
+          cells-wide (:cells-wide gridmodel) 
+          cells-high (:cells-high gridmodel)
+          current-cell-contents (get model location)
+          new-cell-contents (model/toggle-color current-cell-contents)
+          new-heading-f (if (model/white? current-cell-contents) model/turn-left model/turn-right)
+          new-heading (new-heading-f heading)
+          new-model (assoc model location new-cell-contents)
+          new-location (model/new-location cells-wide cells-high location new-heading 1)
+          new-ant (LangtonAnt. new-location new-heading)]
+      (println (str "new-location: " new-location))
+      (println (str "   old-location: " location))
+      (println (str "   new-color: " new-cell-contents))
+      [(assoc gridmodel :model new-model) new-ant [[new-location "red"] [location (name new-cell-contents)]]]
       )
+    ))
 
 (defn new-ant
   "Create a fresh ant at the specified location"
   [start-location]
   (LangtonAnt. start-location :north)
   )
-
-(defn tick
-  "Move the ant from the specified app state one tick on the gridmodel"
-  [app]
-  (let [gridmodel (:gridmodel app)
-        ant (:langton-ant app)]
-    (move gridmodel ant)
-    ))
