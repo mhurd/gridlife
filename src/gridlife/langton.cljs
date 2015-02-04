@@ -6,10 +6,12 @@
             [gridlife.gamemodel :as gamemodel]))
 
 ;; Declare the record type that represents the Langton Ant, a location and a heading (compass).
+;; The record implements the gamemodel/game Protocol to implement the behaviour of this game
+;; in the tick function.
 (defrecord LangtonAnt [location heading]
   gamemodel/game
   (game-name [_] "Langton's Ant")
-  (game-state [_] (str "Langton's Ant: ") location ", " heading)
+  (to-str [_] (str "Langton's Ant: ") location ", " heading)
   (tick [_ gridmodel]
     (let [model (:model gridmodel)
           cells-wide (:cells-wide gridmodel) 

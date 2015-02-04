@@ -2866,7 +2866,21 @@ net.brehaut.ClojureTools = (function (SH) {
   };
 })(SyntaxHighlighter);
 </script><title>gridlife -- Marginalia</title></head><body><table><tr><td class="docs"><div class="header"><h1 class="project-name"><a href="http://gridworld.mhurd.com/">gridlife</a></h1><h2 class="project-version">0.1.0-SNAPSHOT</h2><br /><p>Grid based artificial life, Langton's Ant and Conway's Life</p>
-</div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.clojure/clojurescript</td><td class="dotted"><hr /></td><td class="dep-version">0.0-2511</td></tr><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.6.0</td></tr><tr><td class="dep-name">org.clojure/core.async</td><td class="dotted"><hr /></td><td class="dep-version">0.1.346.0-17112a-alpha</td></tr><tr><td class="dep-name">om</td><td class="dotted"><hr /></td><td class="dep-version">0.8.0-beta5</td></tr><tr><td class="dep-name">sablono</td><td class="dotted"><hr /></td><td class="dep-version">0.2.22</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#gridlife.gridmodel">gridlife.gridmodel</a></li><li><a href="#gridlife.gridui">gridlife.gridui</a></li><li><a href="#gridlife.langton">gridlife.langton</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#gridlife.gridmodel" name="gridlife.gridmodel"><h1 class="project-name">gridlife.gridmodel</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><h2>Models the grid</h2>
+</div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.clojure/clojurescript</td><td class="dotted"><hr /></td><td class="dep-version">0.0-2511</td></tr><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.6.0</td></tr><tr><td class="dep-name">org.clojure/core.async</td><td class="dotted"><hr /></td><td class="dep-version">0.1.346.0-17112a-alpha</td></tr><tr><td class="dep-name">om</td><td class="dotted"><hr /></td><td class="dep-version">0.8.0-beta5</td></tr><tr><td class="dep-name">sablono</td><td class="dotted"><hr /></td><td class="dep-version">0.2.22</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#gridlife.gamemodel">gridlife.gamemodel</a></li><li><a href="#gridlife.gridmodel">gridlife.gridmodel</a></li><li><a href="#gridlife.gridui">gridlife.gridui</a></li><li><a href="#gridlife.langton">gridlife.langton</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#gridlife.gamemodel" name="gridlife.gamemodel"><h1 class="project-name">gridlife.gamemodel</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><h2>Generic functions for the games</h2>
+</td><td class="codes"></td></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure"> (ns gridlife.gamemodel)</pre></td></tr><tr><td class="docs"><p>A protocol for the game implementations requiring the following functions:</p>
+
+<ol>
+<li><em>game-name</em> - returns the name of the game</li>
+<li><em>to-str</em> - returns a string representation of the game state</li>
+<li><em>tick</em> - Move the game forward one tick using the supplied gridmodel, returns
+the new gridmodel the new game (state) and the list of required repaint
+instructions</li>
+</ol>
+</td><td class="codes"><pre class="brush: clojure"> (defprotocol game
+   (game-name [this])
+   (to-str [this])
+   (tick [this gridmodel]))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#gridlife.gridmodel" name="gridlife.gridmodel"><h1 class="project-name">gridlife.gridmodel</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><h2>Models the grid</h2>
 
 <p>Defines a record that holds the model (a map of location to contents), the size in cells (width
 and height) and finally the Langton Ant model (this should be factored out).</p>
@@ -2923,10 +2937,8 @@ the width and height of the grid.</p>
   current location. In the form <code>{:north {:x 1 :y 1} ... }</code>. Note that this assumes that the grid
   wraps.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn compass
-  [gridmodel location distance]
-  (let [cells-wide (:cells-wide gridmodel)
-        cells-high (:cells-high gridmodel)
-        old-x (:x location)
+  [cells-wide cells-high location distance]
+  (let [old-x (:x location)
         old-y (:y location)]
     {:north {:x old-x :y (mod (- old-y distance) cells-high)}
      :south {:x old-x :y (mod (+ old-y distance) cells-high)}
@@ -2934,8 +2946,8 @@ the width and height of the grid.</p>
      :west  {:x (mod (- old-x distance) cells-wide) :y old-y}
      }))</pre></td></tr><tr><td class="docs"><p>Get the new location given the grid, the current location, the compass heading and the distance</p>
 </td><td class="codes"><pre class="brush: clojure">(defn new-location
-  [gridmodel location heading distance]
-  (get (compass gridmodel location distance) heading))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#gridlife.gridui" name="gridlife.gridui"><h1 class="project-name">gridlife.gridui</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><h2>The OM-based GUI</h2>
+  [cells-wide cells-high location heading distance]
+  (get (compass cells-wide cells-high  location distance) heading))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#gridlife.gridui" name="gridlife.gridui"><h1 class="project-name">gridlife.gridui</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><h2>The OM-based GUI</h2>
 
 <p>Uses OM which is a ClojureScript wrapper to Facebooks's
 <a href="http://facebook.github.io/react/" title="react">React</a> project.</p>
@@ -2946,8 +2958,9 @@ the width and height of the grid.</p>
     [om.core :as om :include-macros true]
     [sablono.core :as h :refer-macros [html]]
     [gridlife.gridmodel :as model :refer [GridModel]]
-    [gridlife.langton :as langton :refer [tick]]
-    [cljs.core.async :refer [put! chan &lt;!]]))</pre></td></tr><tr><td class="docs">
+    [gridlife.langton :as langton :refer []]
+    [cljs.core.async :refer [put! chan &lt;!]]
+    [gridlife.gamemodel :as gamemodel :refer [game]]))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(enable-console-print!)</pre></td></tr><tr><td class="docs"><p>Creates an empty map of <code>{:x 1 :y 2}</code> location to contents.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn empty-model
   [cells-wide cells-high]
@@ -2955,23 +2968,27 @@ the width and height of the grid.</p>
                    y (range 0 cells-high)]
                {:x x, :y y})]
     (zipmap keys (repeat :white))))</pre></td></tr><tr><td class="docs"><p>Constant defining the number of cells wide the grid should be.</p>
-</td><td class="codes"><pre class="brush: clojure">(def cells-wide 70)</pre></td></tr><tr><td class="docs"><p>Constant defining the number of cells high the grid should be.</p>
-</td><td class="codes"><pre class="brush: clojure">(def cells-high 70)</pre></td></tr><tr><td class="docs"><p>Constant defining the sizein pixels of each cell.</p>
-</td><td class="codes"><pre class="brush: clojure">(def cell-size 8)</pre></td></tr><tr><td class="docs"><p>Create a new default Langton Ant record (starts in the middle of the grid)</p>
+</td><td class="codes"><pre class="brush: clojure">(def cells-wide 50)</pre></td></tr><tr><td class="docs"><p>Constant defining the number of cells high the grid should be.</p>
+</td><td class="codes"><pre class="brush: clojure">(def cells-high 50)</pre></td></tr><tr><td class="docs"><p>Constant defining the sizein pixels of each cell.</p>
+</td><td class="codes"><pre class="brush: clojure">(def cell-size 12)</pre></td></tr><tr><td class="docs"><p>Create a new default Langton Ant record (starts in the middle of the grid)</p>
 </td><td class="codes"><pre class="brush: clojure">(defn default-ant
-  [] (langton/new-ant {:x (/ cells-wide 2) :y (/ cells-high 2)}))</pre></td></tr><tr><td class="docs">
+  []
+  (langton/new-ant {:x (.floor js/Math (/ cells-wide 2)) :y (.floor js/Math (/ cells-high 2))}))</pre></td></tr><tr><td class="docs"><p>Getthe default game strategies available for this grid</p>
+</td><td class="codes"><pre class="brush: clojure">(defn default-games
+  []
+  [(default-ant)])</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(defn empty-gridmodel []
   &quot;Creates an empty grid model (map of location to contents)&quot;
   (model/GridModel. (empty-model cells-wide cells-high) cells-wide cells-high))</pre></td></tr><tr><td class="docs"><p>The key application state used by OM/react, holds the following information:</p>
 
 <ol>
 <li><code>:gridmodel</code> - the model of the grid mapping locations to cell contents</li>
-<li><code>:langton-ant</code> - the model of the current Langton Ant</li>
+<li><code>:games</code> - the list of games (only Langton Ant at preset)</li>
 <li><code>:run</code> - boolean indicating whether the simultaion is currently running</li>
 </ol>
-</td><td class="codes"><pre class="brush: clojure">(def app-state (atom {:gridmodel   (empty-gridmodel),
-                      :langton-ant (default-ant)
-                      :run         false
+</td><td class="codes"><pre class="brush: clojure">(def app-state (atom {:gridmodel (empty-gridmodel),
+                      :games     (default-games)
+                      :run       false
                       }))</pre></td></tr><tr><td class="docs"><p>The <a href="https://github.com/clojure/core.async" title="core.async">core-async</a> channel used
 to pass the messages of what cells need re-painting.</p>
 </td><td class="codes"><pre class="brush: clojure">(def render-chan (chan))</pre></td></tr><tr><td class="docs"><p>Paints the cell at the specified x/y location the specified color</p>
@@ -2987,7 +3004,7 @@ to pass the messages of what cells need re-painting.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn reset-grid
   [app]
   (om/update! app :gridmodel (empty-gridmodel))
-  (om/update! app :langton-ant (default-ant))
+  (om/update! app :games (default-games))
   (doseq [location (keys (:model (:gridmodel app)))] (paint-cell (:x location) (:y location) &quot;white&quot;)))</pre></td></tr><tr><td class="docs"><p>The core.async loop that accepts the repaint messages</p>
 </td><td class="codes"><pre class="brush: clojure">(defn handle-render-cell
   []
@@ -3004,20 +3021,35 @@ to pass the messages of what cells need re-painting.</p>
         fallback-function (fn [callback] (.setTimeout js/window callback (/ 1000 30)))
         use (or std-function webkit-function moz-function fallback-function)
         ]
-    (set! (.-requestAnimFrame js/window) use)))</pre></td></tr><tr><td class="docs"><p>Normalises the calls from the animation function to the specified maximum moves
-  per-second. Only then does it move the Langton Ant, call for a repaint and request the
-  next animation frame</p>
+    (set! (.-requestAnimFrame js/window) use)))</pre></td></tr><tr><td class="docs"><p>Reduces a list of games by moving them forward one tick, taking the new gridmodel to
+  pass onto the next game and collecting the new game and required repaint instructions. Finally returns
+  a vector containing the final gridmodel, the new list of games (with their new states) and the list of
+  repaint instructions.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn- reduce-games
+  [result game]
+  (let [[gridmodel games repaint-instructions] result
+        [next-gridmodel new-game new-repaint-instructions] (gamemodel/tick game gridmodel)]
+    [next-gridmodel (cons new-game games) (into repaint-instructions new-repaint-instructions)]))</pre></td></tr><tr><td class="docs"><p>Iterates through the repaint instructions and places a call onto the render channel for
+  each location / color pair</p>
+</td><td class="codes"><pre class="brush: clojure">(defn- repaint
+  [repaint-instructions]
+  (doseq [location-color repaint-instructions] (put! render-chan location-color)))</pre></td></tr><tr><td class="docs"><p>Normalises the calls from the animation function to the specified maximum moves
+  per-second. Only then does it iterate through the games to generate the new states and
+  repaints to render.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn run-frame
   [app last-time]
   (let [current-time (.getTime (js/Date.))
         difference (- current-time last-time)
-        max-moves-per-second 30
-        frame-rate-millis (/ 1000 max-moves-per-second)]
+        max-moves-per-second 15
+        frame-rate-millis (/ 1000 max-moves-per-second)
+        gridmodel (:gridmodel @app)]
     (if (and (&gt; difference frame-rate-millis) (:run @app))
-      (let [[new-gridmodel new-ant repaint] (langton/tick @app)]
+      ;; iterate through the games by reducing the list to the final gridmodel, the new games states and the
+      ;; required repaints to render
+      (let [[new-gridmodel new-games repaint-instructions] (reduce reduce-games [gridmodel [] []] (:games @app))]
         (om/update! app :gridmodel new-gridmodel)
-        (om/update! app :langton-ant new-ant)
-        (doseq [location-color repaint] (put! render-chan location-color))
+        (om/update! app :games new-games)
+        (repaint repaint-instructions)
         (.requestAnimFrame js/window (fn [] (run-frame app current-time))))
       (.requestAnimFrame js/window (fn [] (run-frame app last-time))))))</pre></td></tr><tr><td class="docs"><p>Initialises the rendering setup</p>
 </td><td class="codes"><pre class="brush: clojure">(defn init-grid-rendering
@@ -3060,33 +3092,29 @@ to pass the messages of what cells need re-painting.</p>
 <p>This namespace models the behaviour of the Langton Ant as defined on the
 <a href="https://en.wikipedia.org/wiki/Langton's_ant" title="Langton Ant">wikipedia</a> page.</p>
 </td><td class="codes"><pre class="brush: clojure">(ns gridlife.langton
-  (:require [gridlife.gridmodel :as model]))</pre></td></tr><tr><td class="docs"><p>Declare the record type that represents the Langton Ant, a location and a heading (compass).</p>
-</td><td class="codes"><pre class="brush: clojure">(defrecord LangtonAnt [location heading])</pre></td></tr><tr><td class="docs"><p>Move the ant as per the standard rules for Langton's Ants:</p>
-
-<ol>
-<li>At a white square, turn 90 degrees right, flip the color of the square then move forward one unit</li>
-<li>At a black square, turn 90 degrees left, flip the color of the square, then move forward one unit</li>
-</ol>
-</td><td class="codes"><pre class="brush: clojure">(defn- move
-  [gridmodel ant]
-      (let [location (:location ant)
-            heading (:heading ant)
-            model (:model gridmodel)
-            current-cell-contents (get model location)
-            new-cell-contents (model/toggle-color current-cell-contents)
-            new-heading-f (if (model/white? current-cell-contents) model/turn-left model/turn-right)
-            new-heading (new-heading-f heading)
-            new-model (assoc model location new-cell-contents)
-            new-ant (assoc ant :heading new-heading :location (model/new-location gridmodel location new-heading 1))]
-        [(assoc gridmodel :model new-model) new-ant [[(:location new-ant) &quot;red&quot;] [location (name new-cell-contents)]]]))</pre></td></tr><tr><td class="docs"><p>Create a fresh ant at the specified location</p>
+  (:require [gridlife.gridmodel :as model]
+            [gridlife.gamemodel :as gamemodel]))</pre></td></tr><tr><td class="docs"><p>Declare the record type that represents the Langton Ant, a location and a heading (compass).
+The record implements the gamemodel/game Protocol to implement the behaviour of this game
+in the tick function.</p>
+</td><td class="codes"><pre class="brush: clojure">(defrecord LangtonAnt [location heading]
+  gamemodel/game
+  (game-name [_] &quot;Langton's Ant&quot;)
+  (to-str [_] (str &quot;Langton's Ant: &quot;) location &quot;, &quot; heading)
+  (tick [_ gridmodel]
+    (let [model (:model gridmodel)
+          cells-wide (:cells-wide gridmodel) 
+          cells-high (:cells-high gridmodel)
+          current-cell-contents (get model location)
+          new-cell-contents (model/toggle-color current-cell-contents)
+          new-heading-f (if (model/white? current-cell-contents) model/turn-left model/turn-right)
+          new-heading (new-heading-f heading)
+          new-model (assoc model location new-cell-contents)
+          new-location (model/new-location cells-wide cells-high location new-heading 1)
+          new-ant (LangtonAnt. new-location new-heading)]
+      [(assoc gridmodel :model new-model) new-ant [[new-location &quot;red&quot;] [location (name new-cell-contents)]]])))</pre></td></tr><tr><td class="docs"><p>Create a fresh ant at the specified location</p>
 </td><td class="codes"><pre class="brush: clojure">(defn new-ant
   [start-location]
-  (LangtonAnt. start-location :north))</pre></td></tr><tr><td class="docs"><p>Move the ant from the specified app state one tick on the gridmodel</p>
-</td><td class="codes"><pre class="brush: clojure">(defn tick
-  [app]
-  (let [gridmodel (:gridmodel app)
-        ant (:langton-ant app)]
-    (move gridmodel ant)))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr></table><div class="footer">Generated by <a href="https://github.com/gdeer81/marginalia">Marginalia</a>.&nbsp;&nbsp;Syntax highlighting provided by Alex Gorbatchev's <a href="http://alexgorbatchev.com/SyntaxHighlighter/">SyntaxHighlighter</a><div id="floating-toc"><ul><li class="floating-toc-li" id="floating-toc_gridlife.gridmodel">gridlife.gridmodel</li><li class="floating-toc-li" id="floating-toc_gridlife.gridui">gridlife.gridui</li><li class="floating-toc-li" id="floating-toc_gridlife.langton">gridlife.langton</li></ul></div></div><script type="text/javascript">SyntaxHighlighter.defaults['gutter'] = false;
+  (LangtonAnt. start-location :north))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr></table><div class="footer">Generated by <a href="https://github.com/gdeer81/marginalia">Marginalia</a>.&nbsp;&nbsp;Syntax highlighting provided by Alex Gorbatchev's <a href="http://alexgorbatchev.com/SyntaxHighlighter/">SyntaxHighlighter</a><div id="floating-toc"><ul><li class="floating-toc-li" id="floating-toc_gridlife.gamemodel">gridlife.gamemodel</li><li class="floating-toc-li" id="floating-toc_gridlife.gridmodel">gridlife.gridmodel</li><li class="floating-toc-li" id="floating-toc_gridlife.gridui">gridlife.gridui</li><li class="floating-toc-li" id="floating-toc_gridlife.langton">gridlife.langton</li></ul></div></div><script type="text/javascript">SyntaxHighlighter.defaults['gutter'] = false;
 SyntaxHighlighter.all();
 
 // hackity hack

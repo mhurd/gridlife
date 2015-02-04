@@ -24,11 +24,11 @@
   )
 
 ;; Constant defining the number of cells wide the grid should be.
-(def cells-wide 27)
+(def cells-wide 50)
 ;; Constant defining the number of cells high the grid should be.
-(def cells-high 27)
+(def cells-high 50)
 ;; Constant defining the sizein pixels of each cell.
-(def cell-size 20)
+(def cell-size 12)
 
 (defn default-ant
   "Create a new default Langton Ant record (starts in the middle of the grid)"
@@ -49,7 +49,7 @@
 ;; The key application state used by OM/react, holds the following information:
 ;;
 ;; 1. ```:gridmodel``` - the model of the grid mapping locations to cell contents
-;; 2. ```:langton-ant``` - the model of the current Langton Ant
+;; 2. ```:games``` - the list of games (only Langton Ant at preset)
 ;; 3. ```:run``` - boolean indicating whether the simultaion is currently running
 (def app-state (atom {:gridmodel (empty-gridmodel),
                       :games     (default-games)
@@ -102,10 +102,29 @@
     (set! (.-requestAnimFrame js/window) use)
     ))
 
+(defn- reduce-games
+  "Reduces a list of games by moving them forward one tick, taking the new gridmodel to
+  pass onto the next game and collecting the new game and required repaint instructions. Finally returns
+  a vector containing the final gridmodel, the new list of games (with their new states) and the list of
+  repaint instructions."
+  [result game]
+  (let [[gridmodel games repaint-instructions] result
+        [next-gridmodel new-game new-repaint-instructions] (gamemodel/tick game gridmodel)]
+    [next-gridmodel (cons new-game games) (into repaint-instructions new-repaint-instructions)]
+    )
+  )
+
+(defn- repaint
+  "Iterates through the repaint instructions and places a call onto the render channel for
+  each location / color pair"
+  [repaint-instructions]
+  (doseq [location-color repaint-instructions] (put! render-chan location-color))
+  )
+
 (defn run-frame
   "Normalises the calls from the animation function to the specified maximum moves
-  per-second. Only then does it move the Langton Ant, call for a repaint and request the
-  next animation frame"
+  per-second. Only then does it iterate through the games to generate the new states and
+  repaints to render."
   [app last-time]
   (let [current-time (.getTime (js/Date.))
         difference (- current-time last-time)
@@ -113,15 +132,12 @@
         frame-rate-millis (/ 1000 max-moves-per-second)
         gridmodel (:gridmodel @app)]
     (if (and (> difference frame-rate-millis) (:run @app))
-      (let [[new-gridmodel new-games repaint] (reduce (fn [result game]
-                                                        (let [[gridmodel games repaints] result
-                                                              [next-gridmodel new-game new-repaints] (gamemodel/tick game gridmodel)]
-                                                          [next-gridmodel (cons new-game games) (into repaints new-repaints)]
-                                                          )
-                                                        ) [gridmodel [] []] (:games @app))]
+      ;; iterate through the games by reducing the list to the final gridmodel, the new games states and the
+      ;; required repaints to render
+      (let [[new-gridmodel new-games repaint-instructions] (reduce reduce-games [gridmodel [] []] (:games @app))]
         (om/update! app :gridmodel new-gridmodel)
         (om/update! app :games new-games)
-        (doseq [location-color repaint] (put! render-chan location-color))
+        (repaint repaint-instructions)
         (.requestAnimFrame js/window (fn [] (run-frame app current-time)))
         )
       (.requestAnimFrame js/window (fn [] (run-frame app last-time)))
