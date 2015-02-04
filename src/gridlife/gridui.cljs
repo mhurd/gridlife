@@ -36,13 +36,14 @@
   (langton/new-ant {:x (.floor js/Math (/ cells-wide 2)) :y (.floor js/Math (/ cells-high 2))}))
 
 (defn default-games
-  "Getthe default game strategies available for this grid"
+  "Get the default game strategies available for this grid"
   []
   [(default-ant)]
   )
 
-(defn empty-gridmodel []
+(defn empty-gridmodel
   "Creates an empty grid model (map of location to contents)"
+  []
   (model/GridModel. (empty-model cells-wide cells-high) cells-wide cells-high)
   )
 

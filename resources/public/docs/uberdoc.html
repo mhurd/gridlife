@@ -2973,12 +2973,12 @@ the width and height of the grid.</p>
 </td><td class="codes"><pre class="brush: clojure">(def cell-size 12)</pre></td></tr><tr><td class="docs"><p>Create a new default Langton Ant record (starts in the middle of the grid)</p>
 </td><td class="codes"><pre class="brush: clojure">(defn default-ant
   []
-  (langton/new-ant {:x (.floor js/Math (/ cells-wide 2)) :y (.floor js/Math (/ cells-high 2))}))</pre></td></tr><tr><td class="docs"><p>Getthe default game strategies available for this grid</p>
+  (langton/new-ant {:x (.floor js/Math (/ cells-wide 2)) :y (.floor js/Math (/ cells-high 2))}))</pre></td></tr><tr><td class="docs"><p>Get the default game strategies available for this grid</p>
 </td><td class="codes"><pre class="brush: clojure">(defn default-games
   []
-  [(default-ant)])</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn empty-gridmodel []
-  &quot;Creates an empty grid model (map of location to contents)&quot;
+  [(default-ant)])</pre></td></tr><tr><td class="docs"><p>Creates an empty grid model (map of location to contents)</p>
+</td><td class="codes"><pre class="brush: clojure">(defn empty-gridmodel
+  []
   (model/GridModel. (empty-model cells-wide cells-high) cells-wide cells-high))</pre></td></tr><tr><td class="docs"><p>The key application state used by OM/react, holds the following information:</p>
 
 <ol>
