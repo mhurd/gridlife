@@ -109,7 +109,7 @@
   [app last-time]
   (let [current-time (.getTime (js/Date.))
         difference (- current-time last-time)
-        max-moves-per-second 20
+        max-moves-per-second 15
         frame-rate-millis (/ 1000 max-moves-per-second)
         gridmodel (:gridmodel @app)]
     (if (and (> difference frame-rate-millis) (:run @app))

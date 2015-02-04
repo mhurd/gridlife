@@ -21,9 +21,6 @@
           new-model (assoc model location new-cell-contents)
           new-location (model/new-location cells-wide cells-high location new-heading 1)
           new-ant (LangtonAnt. new-location new-heading)]
-      (println (str "new-location: " new-location))
-      (println (str "   old-location: " location))
-      (println (str "   new-color: " new-cell-contents))
       [(assoc gridmodel :model new-model) new-ant [[new-location "red"] [location (name new-cell-contents)]]]
       )
     ))
