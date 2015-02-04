@@ -3044,8 +3044,6 @@ to pass the messages of what cells need re-painting.</p>
         frame-rate-millis (/ 1000 max-moves-per-second)
         gridmodel (:gridmodel @app)]
     (if (and (&gt; difference frame-rate-millis) (:run @app))
-      ;; iterate through the games by reducing the list to the final gridmodel, the new games states and the
-      ;; required repaints to render
       (let [[new-gridmodel new-games repaint-instructions] (reduce reduce-games [gridmodel [] []] (:games @app))]
         (om/update! app :gridmodel new-gridmodel)
         (om/update! app :games new-games)
