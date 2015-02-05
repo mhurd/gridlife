@@ -14,7 +14,7 @@
   (to-str [_] (str "Langton's Ant: ") location ", " heading)
   (tick [_ gridmodel]
     (let [model (:model gridmodel)
-          cells-wide (:cells-wide gridmodel) 
+          cells-wide (:cells-wide gridmodel)
           cells-high (:cells-high gridmodel)
           current-cell-contents (get model location)
           new-cell-contents (model/toggle-color current-cell-contents)

@@ -8,7 +8,8 @@
     [om.core :as om :include-macros true]
     [sablono.core :as h :refer-macros [html]]
     [gridlife.gridmodel :as model :refer [GridModel]]
-    [gridlife.langton :as langton :refer []]
+    [gridlife.langton :as langton]
+    [gridlife.random :as random]
     [cljs.core.async :refer [put! chan <!]]
     [gridlife.gamemodel :as gamemodel :refer [game]]))
 
@@ -38,7 +39,7 @@
 (defn default-games
   "Get the default game strategies available for this grid"
   []
-  [(default-ant)]
+  [(random/new-random-noise) (default-ant)]
   )
 
 (defn empty-gridmodel
@@ -51,11 +52,29 @@
 ;;
 ;; 1. ```:gridmodel``` - the model of the grid mapping locations to cell contents
 ;; 2. ```:games``` - the list of games (only Langton Ant at preset)
-;; 3. ```:run``` - boolean indicating whether the simultaion is currently running
-(def app-state (atom {:gridmodel (empty-gridmodel),
-                      :games     (default-games)
-                      :run       false
+;; 3. ```:enabled-games``` - the list of enabled game names
+;; 4. ```:run``` - boolean indicating whether the simultaion is currently running
+(def app-state (atom {:gridmodel     (empty-gridmodel),
+                      :games         (default-games),
+                      :enabled-games [],
+                      :run           false
                       }))
+
+(defn- enabled? [game]
+  (let [enabled-games (:enabled-games @app-state)]
+    (some #(= (gamemodel/game-name game) %) enabled-games)
+    ))
+
+(defn- toggle-enabled [game]
+  (let [enabled-games (:enabled-games @app-state)
+        name (gamemodel/game-name game)]
+    (println (str "toggling: " name))
+    (if (enabled? game)
+      (om/update! @app-state :enabled-games (remove #(= game %)))
+      (om/update! @app-state :enabled-games (cons name enabled-games)))
+    )
+  )
+
 
 ;; The [core-async](https://github.com/clojure/core.async "core.async") channel used
 ;; to pass the messages of what cells need re-painting.
@@ -110,7 +129,9 @@
   repaint instructions."
   [result game]
   (let [[gridmodel games repaint-instructions] result
-        [next-gridmodel new-game new-repaint-instructions] (gamemodel/tick game gridmodel)]
+        [next-gridmodel new-game new-repaint-instructions] (if (enabled? game)
+                                                             (gamemodel/tick game gridmodel)
+                                                             [gridmodel game repaint-instructions])]
     [next-gridmodel (cons new-game games) (into repaint-instructions new-repaint-instructions)]
     )
   )
@@ -150,6 +171,18 @@
   (.requestAnimFrame js/window (fn [] (run-frame app (.getTime (js/Date.)))))
   )
 
+(defn- game-checkbox [game _]
+  (reify
+    om/IRender
+    (render [_]
+      (h/html
+        [:div
+         [:input {:type "checkbox" :checked (enabled? @game) :on-click #(toggle-enabled @game)}]
+         [:label (gamemodel/game-name @game)]
+         ]
+        )))
+  )
+
 (defn controls-component
   "The OM definition of the controls (Start/Stop and Reset)"
   [app _]
@@ -161,6 +194,9 @@
          [:div {:id "buttons" :class "btn-group btn-group-sm" :role "group"}
           [:button {:class "btn btn-default" :type "button" :on-click #(om/transact! app :run not)} (if (:run app) "Stop" "Start")]
           [:button {:class "btn btn-default" :type "button" :on-click #(reset-grid app)} "Reset"]]
+         [:div
+          (om/build-all game-checkbox (get app :games))
+          ]
          ]))))
 
 (defn grid-component [app _]

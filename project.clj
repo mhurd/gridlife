@@ -20,8 +20,8 @@
   :cljsbuild {
     :builds [{:source-paths ["src/gridlife/"]
               :compiler {:output-to     "src/js/gridlife.js"
-                         :optimizations :advanced
-                         :pretty-print  false
+                         :optimizations :whitespace
+                         :pretty-print  true
                          :externs       ["externs/externs.js",
                                          "resources/public/lib/jquery-2.1.3.min.js"]
                          }}]}

@@ -106,5 +106,5 @@
 (defn new-location
   "Get the new location given the grid, the current location, the compass heading and the distance"
   [cells-wide cells-high location heading distance]
-  (get (compass cells-wide cells-high  location distance) heading)
+  (get (compass cells-wide cells-high location distance) heading)
   )
