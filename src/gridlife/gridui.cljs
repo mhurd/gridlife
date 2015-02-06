@@ -56,25 +56,13 @@
 ;; 4. ```:run``` - boolean indicating whether the simultaion is currently running
 (def app-state (atom {:gridmodel     (empty-gridmodel),
                       :games         (default-games),
-                      :enabled-games [],
+                      :enabled-games {},
                       :run           false
                       }))
-
-(defn- enabled-games-ref []
-  (om/ref-cursor (:enabled-games (om/root-cursor app-state))))
-
-(defn- enabled? [game]
-  (let [enabled-games (enabled-games-ref)]
-    (some #(= (gamemodel/game-name game) %) enabled-games)
-    ))
 
 ;; The [core-async](https://github.com/clojure/core.async "core.async") channel used
 ;; to pass the messages of what cells need re-painting.
 (def render-chan (chan))
-
-;; The [core-async](https://github.com/clojure/core.async "core.async") channel used
-;; to pass the messages that enable / disable games.
-(def game-control-chan (chan))
 
 (defn paint-cell
   "Paints the cell at the specified x/y location the specified color"
@@ -105,24 +93,6 @@
           (recur))))
   )
 
-(defn handle-game-control
-  "The core.async loop that accepts the game control messages"
-  []
-  (go (loop []
-        (let [[name enable] (<! render-chan)]
-          (println (str "Handling: " name " > " enable))
-          (let [enabled-games (enabled-games-ref)]
-            (if enable
-              (if (contains? enabled-games name)
-                nil
-                (om/update! enabled-games (cons name enabled-games))
-                )
-              (if (contains? enabled-games name)
-                (om/update! enabled-games (remove #(= name %) enabled-games))
-                nil
-                )))))
-      ))
-
 (defn set-request-anim-frame-function
   "Either sets up the standard requestAnimationFrame functions specific to the current
   browser or falls back onto using timeouts for the animation."
@@ -143,7 +113,10 @@
   repaint instructions."
   [result game]
   (let [[gridmodel games repaint-instructions] result
-        [next-gridmodel new-game new-repaint-instructions] (if (enabled? game)
+        name (gamemodel/game-name game)
+        enabled-games (:enabled-games @app-state)
+        enabled? (get enabled-games name)
+        [next-gridmodel new-game new-repaint-instructions] (if enabled?
                                                              (gamemodel/tick game gridmodel)
                                                              [gridmodel game repaint-instructions])]
     [next-gridmodel (cons new-game games) (into repaint-instructions new-repaint-instructions)]
@@ -185,36 +158,49 @@
   (.requestAnimFrame js/window (fn [] (run-frame app (.getTime (js/Date.)))))
   )
 
-(defn- game-checkbox [game owner]
-  (println "game = " game)
-  (println "owner = " owner)
+(defn- game-checkbox [enabled-game owner]
   (reify
-    om/IRender
-    (render [_]
-      (let [name (gamemodel/game-name game)]
+    om/IRenderState
+    (render-state [this {:keys [game-control-chan]}]
+      (let [[name enabled?] enabled-game]
         (h/html
-          [:div
+          [:div {:class "checkbox-div"}
            [:input {:type     "checkbox"
-                    :checked  (enabled? game)
-                    :on-click #(put! game-control-chan [name (not (enabled? game))])}]
-           [:label name]
+                    :checked  enabled?
+                    :on-click #(put! game-control-chan [name (not enabled?)])}]
+           [:label {:class "checkbox-label"} name]
            ]
           ))))
   )
 
 (defn controls-component
   "The OM definition of the controls (Start/Stop and Reset)"
-  [app _]
+  [app owner]
   (reify
-    om/IRender
-    (render [_]
+    om/IInitState
+    (init-state [_]
+      {:game-control-chan (chan)})
+    om/IWillMount
+    (will-mount [_]
+      (let [games (:games app)
+            enabled-games (:enabled-games app)
+            control (om/get-state owner :game-control-chan)
+            initial-state (reduce (fn [acc game] (assoc acc (gamemodel/game-name @game) false)) {} games)]
+        (om/update! enabled-games initial-state)
+        (go (loop []
+              (let [[name enable] (<! control)
+                    new-enabled-games (assoc @enabled-games name enable)]
+                  (om/update! enabled-games new-enabled-games)
+                  (recur))))))
+    om/IRenderState
+    (render-state [owner {:keys [game-control-chan]}]
       (h/html
         [:div
          [:div {:id "buttons" :class "btn-group btn-group-sm" :role "group"}
           [:button {:class "btn btn-default" :type "button" :on-click #(om/transact! app :run not)} (if (:run app) "Stop" "Start")]
           [:button {:class "btn btn-default" :type "button" :on-click #(reset-grid app)} "Reset"]]
-         [:div
-          (om/build-all game-checkbox (:games app))
+         [:div {:class "games-div"}
+          (om/build-all game-checkbox (:enabled-games app) {:init-state {:game-control-chan game-control-chan}})
           ]
          ]))))
 
@@ -225,7 +211,6 @@
     (did-mount [_]
       (reset-grid app)
       (handle-render-cell)
-      (handle-game-control)
       (init-grid-rendering app))
     om/IRender
     (render [_]
