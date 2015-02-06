@@ -60,25 +60,21 @@
                       :run           false
                       }))
 
+(defn- enabled-games-ref []
+  (om/ref-cursor (:enabled-games (om/root-cursor app-state))))
+
 (defn- enabled? [game]
-  (let [enabled-games (:enabled-games @app-state)]
+  (let [enabled-games (enabled-games-ref)]
     (some #(= (gamemodel/game-name game) %) enabled-games)
     ))
-
-(defn- toggle-enabled [game]
-  (let [enabled-games (:enabled-games @app-state)
-        name (gamemodel/game-name game)]
-    (println (str "toggling: " name))
-    (if (enabled? game)
-      (om/update! @app-state :enabled-games (remove #(= game %)))
-      (om/update! @app-state :enabled-games (cons name enabled-games)))
-    )
-  )
-
 
 ;; The [core-async](https://github.com/clojure/core.async "core.async") channel used
 ;; to pass the messages of what cells need re-painting.
 (def render-chan (chan))
+
+;; The [core-async](https://github.com/clojure/core.async "core.async") channel used
+;; to pass the messages that enable / disable games.
+(def game-control-chan (chan))
 
 (defn paint-cell
   "Paints the cell at the specified x/y location the specified color"
@@ -108,6 +104,24 @@
           (paint-cell (:x cell) (:y cell) color)
           (recur))))
   )
+
+(defn handle-game-control
+  "The core.async loop that accepts the game control messages"
+  []
+  (go (loop []
+        (let [[name enable] (<! render-chan)]
+          (println (str "Handling: " name " > " enable))
+          (let [enabled-games (enabled-games-ref)]
+            (if enable
+              (if (contains? enabled-games name)
+                nil
+                (om/update! enabled-games (cons name enabled-games))
+                )
+              (if (contains? enabled-games name)
+                (om/update! enabled-games (remove #(= name %) enabled-games))
+                nil
+                )))))
+      ))
 
 (defn set-request-anim-frame-function
   "Either sets up the standard requestAnimationFrame functions specific to the current
@@ -171,16 +185,21 @@
   (.requestAnimFrame js/window (fn [] (run-frame app (.getTime (js/Date.)))))
   )
 
-(defn- game-checkbox [game _]
+(defn- game-checkbox [game owner]
+  (println "game = " game)
+  (println "owner = " owner)
   (reify
     om/IRender
     (render [_]
-      (h/html
-        [:div
-         [:input {:type "checkbox" :checked (enabled? @game) :on-click #(toggle-enabled @game)}]
-         [:label (gamemodel/game-name @game)]
-         ]
-        )))
+      (let [name (gamemodel/game-name game)]
+        (h/html
+          [:div
+           [:input {:type     "checkbox"
+                    :checked  (enabled? game)
+                    :on-click #(put! game-control-chan [name (not (enabled? game))])}]
+           [:label name]
+           ]
+          ))))
   )
 
 (defn controls-component
@@ -195,7 +214,7 @@
           [:button {:class "btn btn-default" :type "button" :on-click #(om/transact! app :run not)} (if (:run app) "Stop" "Start")]
           [:button {:class "btn btn-default" :type "button" :on-click #(reset-grid app)} "Reset"]]
          [:div
-          (om/build-all game-checkbox (get app :games))
+          (om/build-all game-checkbox (:games app))
           ]
          ]))))
 
@@ -206,6 +225,7 @@
     (did-mount [_]
       (reset-grid app)
       (handle-render-cell)
+      (handle-game-control)
       (init-grid-rendering app))
     om/IRender
     (render [_]
