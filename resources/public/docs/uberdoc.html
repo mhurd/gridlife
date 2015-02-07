@@ -2956,9 +2956,9 @@ the width and height of the grid.</p>
     [cljs.core.async :refer [put! chan &lt;!]]
     [gridlife.gamemodel :as gamemodel :refer [game]]))</pre></td></tr><tr><td class="docs"><p>enable printing to the Javascript console</p>
 </td><td class="codes"><pre class="brush: clojure">(enable-console-print!)</pre></td></tr><tr><td class="docs"><p>Constant defining the number of cells wide the grid should be.</p>
-</td><td class="codes"><pre class="brush: clojure">(def cells-wide 50)</pre></td></tr><tr><td class="docs"><p>Constant defining the number of cells high the grid should be.</p>
-</td><td class="codes"><pre class="brush: clojure">(def cells-high 50)</pre></td></tr><tr><td class="docs"><p>Constant defining the sizein pixels of each cell.</p>
-</td><td class="codes"><pre class="brush: clojure">(def cell-size 12)</pre></td></tr><tr><td class="docs"><p>Creates an empty map of <code>{:x 1 :y 2}</code> location to contents.</p>
+</td><td class="codes"><pre class="brush: clojure">(def cells-wide 70)</pre></td></tr><tr><td class="docs"><p>Constant defining the number of cells high the grid should be.</p>
+</td><td class="codes"><pre class="brush: clojure">(def cells-high 70)</pre></td></tr><tr><td class="docs"><p>Constant defining the sizein pixels of each cell.</p>
+</td><td class="codes"><pre class="brush: clojure">(def cell-size 8)</pre></td></tr><tr><td class="docs"><p>Creates an empty map of <code>{:x 1 :y 2}</code> location to contents.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn empty-model
   [cells-wide cells-high]
   (let [keys (for [x (range 0 cells-wide)
