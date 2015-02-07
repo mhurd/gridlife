@@ -3042,7 +3042,7 @@ the width and height of the grid.</p>
       (.requestAnimFrame js/window (fn [] (run-frame app render-chan last-time))))))</pre></td></tr><tr><td class="docs"><p>Renders an individual game checkbox used to enable/disable that game, it sets up an on-click handler
   for the checkbox that will pass an instruction onto the game control
   <a href="https://github.com/clojure/core.async">core-async</a> channel that is passed as initial state to this
-  component by the controls conponent</p>
+  component by the controls component</p>
 </td><td class="codes"><pre class="brush: clojure">(defn- game-checkbox
   [enabled-game _]
   (reify

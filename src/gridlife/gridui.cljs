@@ -137,7 +137,7 @@
   "Renders an individual game checkbox used to enable/disable that game, it sets up an on-click handler
   for the checkbox that will pass an instruction onto the game control
   [core-async](https://github.com/clojure/core.async) channel that is passed as initial state to this
-  component by the controls conponent"
+  component by the controls component"
   [enabled-game _]
   (reify
     om/IRenderState
