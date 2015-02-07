@@ -3175,9 +3175,9 @@ in the tick function.</p>
   (LangtonAnt. start-location :north))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#gridlife.random" name="gridlife.random"><h1 class="project-name">gridlife.random</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(ns gridlife.random
   (:require [gridlife.gridmodel :as model]
-            [gridlife.gamemodel :as gamemodel]))</pre></td></tr><tr><td class="docs"><p>Declare the record type that represents the Langton Ant, a location and a heading (compass).
-The record implements the gamemodel/game Protocol to implement the behaviour of this game
-in the tick function.</p>
+            [gridlife.gamemodel :as gamemodel]))</pre></td></tr><tr><td class="docs"><p>Declare the record type that represents Random Noise, this has no game state but implements
+the gamemodel/game Protocol to implement a behaviour that on each tick toggles the color of a
+random cell.</p>
 </td><td class="codes"><pre class="brush: clojure">(defrecord RandomNoise []
   gamemodel/game
   (game-name [_] &quot;Random Noise&quot;)

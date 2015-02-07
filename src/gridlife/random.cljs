@@ -2,9 +2,9 @@
   (:require [gridlife.gridmodel :as model]
             [gridlife.gamemodel :as gamemodel]))
 
-;; Declare the record type that represents the Langton Ant, a location and a heading (compass).
-;; The record implements the gamemodel/game Protocol to implement the behaviour of this game
-;; in the tick function.
+;; Declare the record type that represents Random Noise, this has no game state but implements
+;; the gamemodel/game Protocol to implement a behaviour that on each tick toggles the color of a
+;; random cell.
 (defrecord RandomNoise []
   gamemodel/game
   (game-name [_] "Random Noise")
