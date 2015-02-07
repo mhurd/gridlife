@@ -22,8 +22,8 @@
                                   :compiler     {
                                                  :main          main.core
                                                  :output-to     "src/js/gridlife.js"
-                                                 :optimizations :whitespace
-                                                 :pretty-print  true
+                                                 :optimizations :advanced
+                                                 :pretty-print  false
                                                  :externs       ["externs/externs.js",
                                                                  "resources/public/lib/jquery-2.1.3.min.js"]
                                                  }}]}
