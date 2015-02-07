@@ -17,11 +17,11 @@
 (enable-console-print!)
 
 ;; Constant defining the number of cells wide the grid should be.
-(def cells-wide 50)
+(def cells-wide 70)
 ;; Constant defining the number of cells high the grid should be.
-(def cells-high 50)
+(def cells-high 70)
 ;; Constant defining the sizein pixels of each cell.
-(def cell-size 12)
+(def cell-size 8)
 
 (defn empty-model
   "Creates an empty map of ```{:x 1 :y 2}``` location to contents."
