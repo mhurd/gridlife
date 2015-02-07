@@ -13,7 +13,15 @@
     [cljs.core.async :refer [put! chan <!]]
     [gridlife.gamemodel :as gamemodel :refer [game]]))
 
+;; enable printing to the Javascript console
 (enable-console-print!)
+
+;; Constant defining the number of cells wide the grid should be.
+(def cells-wide 50)
+;; Constant defining the number of cells high the grid should be.
+(def cells-high 50)
+;; Constant defining the sizein pixels of each cell.
+(def cell-size 12)
 
 (defn empty-model
   "Creates an empty map of ```{:x 1 :y 2}``` location to contents."
@@ -23,13 +31,6 @@
                {:x x, :y y})]
     (zipmap keys (repeat :white)))
   )
-
-;; Constant defining the number of cells wide the grid should be.
-(def cells-wide 50)
-;; Constant defining the number of cells high the grid should be.
-(def cells-high 50)
-;; Constant defining the sizein pixels of each cell.
-(def cell-size 12)
 
 (defn default-ant
   "Create a new default Langton Ant record (starts in the middle of the grid)"
@@ -51,18 +52,14 @@
 ;; The key application state used by OM/react, holds the following information:
 ;;
 ;; 1. ```:gridmodel``` - the model of the grid mapping locations to cell contents
-;; 2. ```:games``` - the list of games (only Langton Ant at preset)
-;; 3. ```:enabled-games``` - the list of enabled game names
+;; 2. ```:games``` - the list of games (only Random noise & Langton Ant at preset)
+;; 3. ```:enabled-games``` - the map of enabled game names to whether they are enabled
 ;; 4. ```:run``` - boolean indicating whether the simultaion is currently running
 (def app-state (atom {:gridmodel     (empty-gridmodel),
                       :games         (default-games),
                       :enabled-games {},
                       :run           false
                       }))
-
-;; The [core-async](https://github.com/clojure/core.async "core.async") channel used
-;; to pass the messages of what cells need re-painting.
-(def render-chan (chan))
 
 (defn paint-cell
   "Paints the cell at the specified x/y location the specified color"
@@ -84,15 +81,6 @@
   (doseq [location (keys (:model (:gridmodel app)))] (paint-cell (:x location) (:y location) "white"))
   )
 
-(defn handle-render-cell
-  "The core.async loop that accepts the repaint messages"
-  []
-  (go (loop []
-        (let [[cell color] (<! render-chan)]
-          (paint-cell (:x cell) (:y cell) color)
-          (recur))))
-  )
-
 (defn set-request-anim-frame-function
   "Either sets up the standard requestAnimationFrame functions specific to the current
   browser or falls back onto using timeouts for the animation."
@@ -101,8 +89,7 @@
         webkit-function (.-webkitRequestAnimationFrame js/window)
         moz-function (.-mozRequestAnimationFrame js/window)
         fallback-function (fn [callback] (.setTimeout js/window callback (/ 1000 30)))
-        use (or std-function webkit-function moz-function fallback-function)
-        ]
+        use (or std-function webkit-function moz-function fallback-function)]
     (set! (.-requestAnimFrame js/window) use)
     ))
 
@@ -110,7 +97,7 @@
   "Reduces a list of games by moving them forward one tick, taking the new gridmodel to
   pass onto the next game and collecting the new game and required repaint instructions. Finally returns
   a vector containing the final gridmodel, the new list of games (with their new states) and the list of
-  repaint instructions."
+  repaint instructions so that the global app state can be updated."
   [result game]
   (let [[gridmodel games repaint-instructions] result
         name (gamemodel/game-name game)
@@ -123,18 +110,13 @@
     )
   )
 
-(defn- repaint
-  "Iterates through the repaint instructions and places a call onto the render channel for
-  each location / color pair"
-  [repaint-instructions]
-  (doseq [location-color repaint-instructions] (put! render-chan location-color))
-  )
-
 (defn run-frame
   "Normalises the calls from the animation function to the specified maximum moves
   per-second. Only then does it iterate through the games to generate the new states and
-  repaints to render."
-  [app last-time]
+  repaints to render. The cells are individually painted by passing messages onto the
+  [core-async](https://github.com/clojure/core.async) channel for painting onto
+  the canvas"
+  [app render-chan last-time]
   (let [current-time (.getTime (js/Date.))
         difference (- current-time last-time)
         max-moves-per-second 15
@@ -144,21 +126,19 @@
       (let [[new-gridmodel new-games repaint-instructions] (reduce reduce-games [gridmodel [] []] (:games @app))]
         (om/update! app :gridmodel new-gridmodel)
         (om/update! app :games new-games)
-        (repaint repaint-instructions)
-        (.requestAnimFrame js/window (fn [] (run-frame app current-time)))
+        (doseq [location-color repaint-instructions] (put! render-chan location-color))
+        (.requestAnimFrame js/window (fn [] (run-frame app render-chan current-time)))
         )
-      (.requestAnimFrame js/window (fn [] (run-frame app last-time)))
+      (.requestAnimFrame js/window (fn [] (run-frame app render-chan last-time)))
       ))
   )
 
-(defn init-grid-rendering
-  "Initialises the rendering setup"
-  [app]
-  (set-request-anim-frame-function)
-  (.requestAnimFrame js/window (fn [] (run-frame app (.getTime (js/Date.)))))
-  )
-
-(defn- game-checkbox [enabled-game owner]
+(defn- game-checkbox
+  "Renders an individual game checkbox used to enable/disable that game, it sets up an on-click handler
+  for the checkbox that will pass an instruction onto the game control
+  [core-async](https://github.com/clojure/core.async) channel that is passed as initial state to this
+  component by the controls conponent"
+  [enabled-game _]
   (reify
     om/IRenderState
     (render-state [this {:keys [game-control-chan]}]
@@ -174,7 +154,16 @@
   )
 
 (defn controls-component
-  "The OM definition of the controls (Start/Stop and Reset)"
+  "The OM controls component (Start/Stop, Reset and enabling/disabling games). It is configured with the following
+  lifecycle stages:
+
+  1. _om/IInitState_ sets up the initial state containing a
+  [core-async](https://github.com/clojure/core.async) channel to be used to pass control messages
+  2. _om/IWillMount_ will, before the DOM is setup, initialise the enabled games global state and start the go loop
+  for the control channel (this listens for the control messages indicating that a game has been
+  enabled/disabled and updates the global state)
+  3. _om/IRenderState_ sets up the DOM elements and passes the initial state containing the game control channel to
+  the sub-component responsible for building the individual game enable/disable checkboxes"
   [app owner]
   (reify
     om/IInitState
@@ -184,43 +173,71 @@
     (will-mount [_]
       (let [games (:games app)
             enabled-games (:enabled-games app)
-            control (om/get-state owner :game-control-chan)
+            game-control-chan (om/get-state owner :game-control-chan)
             initial-state (reduce (fn [acc game] (assoc acc (gamemodel/game-name @game) false)) {} games)]
         (om/update! enabled-games initial-state)
         (go (loop []
-              (let [[name enable] (<! control)
+              (let [[name enable] (<! game-control-chan)
                     new-enabled-games (assoc @enabled-games name enable)]
-                  (om/update! enabled-games new-enabled-games)
-                  (recur))))))
+                (om/update! enabled-games new-enabled-games)
+                (recur))))))
     om/IRenderState
     (render-state [owner {:keys [game-control-chan]}]
       (h/html
         [:div
          [:div {:id "buttons" :class "btn-group btn-group-sm" :role "group"}
-          [:button {:class "btn btn-default" :type "button" :on-click #(om/transact! app :run not)} (if (:run app) "Stop" "Start")]
-          [:button {:class "btn btn-default" :type "button" :on-click #(reset-grid app)} "Reset"]]
+          [:button {:class "btn btn-default"
+                    :type "button"
+                    :on-click #(om/transact! app :run not)} (if (:run app) "Stop" "Start")]
+          [:button {:class "btn btn-default"
+                    :type "button"
+                    :on-click #(reset-grid app)} "Reset"]]
          [:div {:class "games-div"}
           (om/build-all game-checkbox (:enabled-games app) {:init-state {:game-control-chan game-control-chan}})
           ]
          ]))))
 
-(defn grid-component [app _]
-  "The OM definition of the grid canvas"
+(defn grid-component
+  "The OM canvas component. It is configured with the following
+  lifecycle stages:
+
+  1. _om/IInitState_ sets up the initial state containing a
+  [core-async](https://github.com/clojure/core.async) channel to be used to pass paint cell messages
+  2. _om/IWillMount_ will, before the DOM is setup, start the go loop for the render channel
+  (this listens for the paint messages and paints the corresponding cell on the canvas)
+  3. _om/IDidMount_ will, after the DOM is setup, reset the grid and setup the required animation functions
+  and the render channel.
+  4. _om/IRenderState_ sets up the DOM elements."
+  [app owner]
   (reify
+    om/IInitState
+    (init-state [_]
+      {:render-chan (chan)})
+    om/IWillMount
+    (will-mount [_]
+      (let [render-chan (om/get-state owner :render-chan)]
+        (go (loop []
+              (let [[cell color] (<! render-chan)]
+                (paint-cell (:x cell) (:y cell) color)
+                (recur))))))
     om/IDidMount
     (did-mount [_]
-      (reset-grid app)
-      (handle-render-cell)
-      (init-grid-rendering app))
-    om/IRender
-    (render [_]
+      (let [render-chan (om/get-state owner :render-chan)]
+        (reset-grid app)
+        (set-request-anim-frame-function)
+        (.requestAnimFrame js/window (fn [] (run-frame app render-chan (.getTime (js/Date.)))))))
+    om/IRenderState
+    (render-state [_ _]
       (let [cells-wide (:cells-wide (:gridmodel @app))
             cells-high (:cells-high (:gridmodel @app))
             pxwidth (* cell-size cells-wide)
             pxheight (* cell-size cells-high)]
         (h/html
           [:div
-           [:canvas {:id "canvas" :class "canvas" :width pxwidth :height pxheight}]]
+           [:canvas {:id "canvas"
+                     :class "canvas"
+                     :width pxwidth
+                     :height pxheight}]]
           )))))
 
 ;; The hook into the DOM for the controls.

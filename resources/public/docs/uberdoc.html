@@ -2866,21 +2866,14 @@ net.brehaut.ClojureTools = (function (SH) {
   };
 })(SyntaxHighlighter);
 </script><title>gridlife -- Marginalia</title></head><body><table><tr><td class="docs"><div class="header"><h1 class="project-name"><a href="http://gridworld.mhurd.com/">gridlife</a></h1><h2 class="project-version">0.1.0-SNAPSHOT</h2><br /><p>Grid based artificial life, Langton's Ant and Conway's Life</p>
-</div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.clojure/clojurescript</td><td class="dotted"><hr /></td><td class="dep-version">0.0-2511</td></tr><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.6.0</td></tr><tr><td class="dep-name">org.clojure/core.async</td><td class="dotted"><hr /></td><td class="dep-version">0.1.346.0-17112a-alpha</td></tr><tr><td class="dep-name">om</td><td class="dotted"><hr /></td><td class="dep-version">0.8.0-beta5</td></tr><tr><td class="dep-name">sablono</td><td class="dotted"><hr /></td><td class="dep-version">0.2.22</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#gridlife.gamemodel">gridlife.gamemodel</a></li><li><a href="#gridlife.gridmodel">gridlife.gridmodel</a></li><li><a href="#gridlife.gridui">gridlife.gridui</a></li><li><a href="#gridlife.langton">gridlife.langton</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#gridlife.gamemodel" name="gridlife.gamemodel"><h1 class="project-name">gridlife.gamemodel</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><h2>Generic functions for the games</h2>
+</div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.clojure/clojurescript</td><td class="dotted"><hr /></td><td class="dep-version">0.0-2760</td></tr><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.6.0</td></tr><tr><td class="dep-name">org.clojure/core.async</td><td class="dotted"><hr /></td><td class="dep-version">0.1.346.0-17112a-alpha</td></tr><tr><td class="dep-name">om</td><td class="dotted"><hr /></td><td class="dep-version">0.8.0-rc1</td></tr><tr><td class="dep-name">sablono</td><td class="dotted"><hr /></td><td class="dep-version">0.2.22</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#gridlife.gamemodel">gridlife.gamemodel</a></li><li><a href="#gridlife.gridmodel">gridlife.gridmodel</a></li><li><a href="#gridlife.gridui">gridlife.gridui</a></li><li><a href="#gridlife.langton">gridlife.langton</a></li><li><a href="#gridlife.random">gridlife.random</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#gridlife.gamemodel" name="gridlife.gamemodel"><h1 class="project-name">gridlife.gamemodel</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><h2>Generic functions for the games</h2>
 </td><td class="codes"></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure"> (ns gridlife.gamemodel)</pre></td></tr><tr><td class="docs"><p>A protocol for the game implementations requiring the following functions:</p>
-
-<ol>
-<li><em>game-name</em> - returns the name of the game</li>
-<li><em>to-str</em> - returns a string representation of the game state</li>
-<li><em>tick</em> - Move the game forward one tick using the supplied gridmodel, returns
-the new gridmodel the new game (state) and the list of required repaint
-instructions</li>
-</ol>
-</td><td class="codes"><pre class="brush: clojure"> (defprotocol game
-   (game-name [this])
-   (to-str [this])
-   (tick [this gridmodel]))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#gridlife.gridmodel" name="gridlife.gridmodel"><h1 class="project-name">gridlife.gridmodel</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><h2>Models the grid</h2>
+</td><td class="codes"><pre class="brush: clojure">(ns gridlife.gamemodel)</pre></td></tr><tr><td class="docs"><p>A protocol for the game implementations</p>
+</td><td class="codes"><pre class="brush: clojure">(defprotocol game
+  (game-name [this] &quot;The name of the game&quot;)
+  (to-str [this] &quot;Return a string representation of the game state (if any)&quot;)
+  (tick [this gridmodel] &quot;Make a move in the game given the current gridmodel, returns
+   the new gridmodel the new game (state) and the list of required repaint&quot;))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#gridlife.gridmodel" name="gridlife.gridmodel"><h1 class="project-name">gridlife.gridmodel</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><h2>Models the grid</h2>
 
 <p>Defines a record that holds the model (a map of location to contents), the size in cells (width
 and height) and finally the Langton Ant model (this should be factored out).</p>
@@ -2947,7 +2940,7 @@ the width and height of the grid.</p>
      }))</pre></td></tr><tr><td class="docs"><p>Get the new location given the grid, the current location, the compass heading and the distance</p>
 </td><td class="codes"><pre class="brush: clojure">(defn new-location
   [cells-wide cells-high location heading distance]
-  (get (compass cells-wide cells-high  location distance) heading))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#gridlife.gridui" name="gridlife.gridui"><h1 class="project-name">gridlife.gridui</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><h2>The OM-based GUI</h2>
+  (get (compass cells-wide cells-high location distance) heading))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#gridlife.gridui" name="gridlife.gridui"><h1 class="project-name">gridlife.gridui</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><h2>The OM-based GUI</h2>
 
 <p>Uses OM which is a ClojureScript wrapper to Facebooks's
 <a href="http://facebook.github.io/react/" title="react">React</a> project.</p>
@@ -2958,40 +2951,41 @@ the width and height of the grid.</p>
     [om.core :as om :include-macros true]
     [sablono.core :as h :refer-macros [html]]
     [gridlife.gridmodel :as model :refer [GridModel]]
-    [gridlife.langton :as langton :refer []]
+    [gridlife.langton :as langton]
+    [gridlife.random :as random]
     [cljs.core.async :refer [put! chan &lt;!]]
-    [gridlife.gamemodel :as gamemodel :refer [game]]))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(enable-console-print!)</pre></td></tr><tr><td class="docs"><p>Creates an empty map of <code>{:x 1 :y 2}</code> location to contents.</p>
+    [gridlife.gamemodel :as gamemodel :refer [game]]))</pre></td></tr><tr><td class="docs"><p>enable printing to the Javascript console</p>
+</td><td class="codes"><pre class="brush: clojure">(enable-console-print!)</pre></td></tr><tr><td class="docs"><p>Constant defining the number of cells wide the grid should be.</p>
+</td><td class="codes"><pre class="brush: clojure">(def cells-wide 50)</pre></td></tr><tr><td class="docs"><p>Constant defining the number of cells high the grid should be.</p>
+</td><td class="codes"><pre class="brush: clojure">(def cells-high 50)</pre></td></tr><tr><td class="docs"><p>Constant defining the sizein pixels of each cell.</p>
+</td><td class="codes"><pre class="brush: clojure">(def cell-size 12)</pre></td></tr><tr><td class="docs"><p>Creates an empty map of <code>{:x 1 :y 2}</code> location to contents.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn empty-model
   [cells-wide cells-high]
   (let [keys (for [x (range 0 cells-wide)
                    y (range 0 cells-high)]
                {:x x, :y y})]
-    (zipmap keys (repeat :white))))</pre></td></tr><tr><td class="docs"><p>Constant defining the number of cells wide the grid should be.</p>
-</td><td class="codes"><pre class="brush: clojure">(def cells-wide 50)</pre></td></tr><tr><td class="docs"><p>Constant defining the number of cells high the grid should be.</p>
-</td><td class="codes"><pre class="brush: clojure">(def cells-high 50)</pre></td></tr><tr><td class="docs"><p>Constant defining the sizein pixels of each cell.</p>
-</td><td class="codes"><pre class="brush: clojure">(def cell-size 12)</pre></td></tr><tr><td class="docs"><p>Create a new default Langton Ant record (starts in the middle of the grid)</p>
+    (zipmap keys (repeat :white))))</pre></td></tr><tr><td class="docs"><p>Create a new default Langton Ant record (starts in the middle of the grid)</p>
 </td><td class="codes"><pre class="brush: clojure">(defn default-ant
   []
   (langton/new-ant {:x (.floor js/Math (/ cells-wide 2)) :y (.floor js/Math (/ cells-high 2))}))</pre></td></tr><tr><td class="docs"><p>Get the default game strategies available for this grid</p>
 </td><td class="codes"><pre class="brush: clojure">(defn default-games
   []
-  [(default-ant)])</pre></td></tr><tr><td class="docs"><p>Creates an empty grid model (map of location to contents)</p>
+  [(random/new-random-noise) (default-ant)])</pre></td></tr><tr><td class="docs"><p>Creates an empty grid model (map of location to contents)</p>
 </td><td class="codes"><pre class="brush: clojure">(defn empty-gridmodel
   []
   (model/GridModel. (empty-model cells-wide cells-high) cells-wide cells-high))</pre></td></tr><tr><td class="docs"><p>The key application state used by OM/react, holds the following information:</p>
 
 <ol>
 <li><code>:gridmodel</code> - the model of the grid mapping locations to cell contents</li>
-<li><code>:games</code> - the list of games (only Langton Ant at preset)</li>
+<li><code>:games</code> - the list of games (only Random noise &amp; Langton Ant at preset)</li>
+<li><code>:enabled-games</code> - the map of enabled game names to whether they are enabled</li>
 <li><code>:run</code> - boolean indicating whether the simultaion is currently running</li>
 </ol>
-</td><td class="codes"><pre class="brush: clojure">(def app-state (atom {:gridmodel (empty-gridmodel),
-                      :games     (default-games)
-                      :run       false
-                      }))</pre></td></tr><tr><td class="docs"><p>The <a href="https://github.com/clojure/core.async" title="core.async">core-async</a> channel used
-to pass the messages of what cells need re-painting.</p>
-</td><td class="codes"><pre class="brush: clojure">(def render-chan (chan))</pre></td></tr><tr><td class="docs"><p>Paints the cell at the specified x/y location the specified color</p>
+</td><td class="codes"><pre class="brush: clojure">(def app-state (atom {:gridmodel     (empty-gridmodel),
+                      :games         (default-games),
+                      :enabled-games {},
+                      :run           false
+                      }))</pre></td></tr><tr><td class="docs"><p>Paints the cell at the specified x/y location the specified color</p>
 </td><td class="codes"><pre class="brush: clojure">(defn paint-cell
   [x y color]
   (let [x-px-pos (* x cell-size)
@@ -3005,13 +2999,7 @@ to pass the messages of what cells need re-painting.</p>
   [app]
   (om/update! app :gridmodel (empty-gridmodel))
   (om/update! app :games (default-games))
-  (doseq [location (keys (:model (:gridmodel app)))] (paint-cell (:x location) (:y location) &quot;white&quot;)))</pre></td></tr><tr><td class="docs"><p>The core.async loop that accepts the repaint messages</p>
-</td><td class="codes"><pre class="brush: clojure">(defn handle-render-cell
-  []
-  (go (loop []
-        (let [[cell color] (&lt;! render-chan)]
-          (paint-cell (:x cell) (:y cell) color)
-          (recur)))))</pre></td></tr><tr><td class="docs"><p>Either sets up the standard requestAnimationFrame functions specific to the current
+  (doseq [location (keys (:model (:gridmodel app)))] (paint-cell (:x location) (:y location) &quot;white&quot;)))</pre></td></tr><tr><td class="docs"><p>Either sets up the standard requestAnimationFrame functions specific to the current
   browser or falls back onto using timeouts for the animation.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn set-request-anim-frame-function
   []
@@ -3019,25 +3007,27 @@ to pass the messages of what cells need re-painting.</p>
         webkit-function (.-webkitRequestAnimationFrame js/window)
         moz-function (.-mozRequestAnimationFrame js/window)
         fallback-function (fn [callback] (.setTimeout js/window callback (/ 1000 30)))
-        use (or std-function webkit-function moz-function fallback-function)
-        ]
+        use (or std-function webkit-function moz-function fallback-function)]
     (set! (.-requestAnimFrame js/window) use)))</pre></td></tr><tr><td class="docs"><p>Reduces a list of games by moving them forward one tick, taking the new gridmodel to
   pass onto the next game and collecting the new game and required repaint instructions. Finally returns
   a vector containing the final gridmodel, the new list of games (with their new states) and the list of
-  repaint instructions.</p>
+  repaint instructions so that the global app state can be updated.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn- reduce-games
   [result game]
   (let [[gridmodel games repaint-instructions] result
-        [next-gridmodel new-game new-repaint-instructions] (gamemodel/tick game gridmodel)]
-    [next-gridmodel (cons new-game games) (into repaint-instructions new-repaint-instructions)]))</pre></td></tr><tr><td class="docs"><p>Iterates through the repaint instructions and places a call onto the render channel for
-  each location / color pair</p>
-</td><td class="codes"><pre class="brush: clojure">(defn- repaint
-  [repaint-instructions]
-  (doseq [location-color repaint-instructions] (put! render-chan location-color)))</pre></td></tr><tr><td class="docs"><p>Normalises the calls from the animation function to the specified maximum moves
+        name (gamemodel/game-name game)
+        enabled-games (:enabled-games @app-state)
+        enabled? (get enabled-games name)
+        [next-gridmodel new-game new-repaint-instructions] (if enabled?
+                                                             (gamemodel/tick game gridmodel)
+                                                             [gridmodel game repaint-instructions])]
+    [next-gridmodel (cons new-game games) (into repaint-instructions new-repaint-instructions)]))</pre></td></tr><tr><td class="docs"><p>Normalises the calls from the animation function to the specified maximum moves
   per-second. Only then does it iterate through the games to generate the new states and
-  repaints to render.</p>
+  repaints to render. The cells are individually painted by passing messages onto the
+  <a href="https://github.com/clojure/core.async">core-async</a> channel for painting onto
+  the canvas</p>
 </td><td class="codes"><pre class="brush: clojure">(defn run-frame
-  [app last-time]
+  [app render-chan last-time]
   (let [current-time (.getTime (js/Date.))
         difference (- current-time last-time)
         max-moves-per-second 15
@@ -3047,41 +3037,111 @@ to pass the messages of what cells need re-painting.</p>
       (let [[new-gridmodel new-games repaint-instructions] (reduce reduce-games [gridmodel [] []] (:games @app))]
         (om/update! app :gridmodel new-gridmodel)
         (om/update! app :games new-games)
-        (repaint repaint-instructions)
-        (.requestAnimFrame js/window (fn [] (run-frame app current-time))))
-      (.requestAnimFrame js/window (fn [] (run-frame app last-time))))))</pre></td></tr><tr><td class="docs"><p>Initialises the rendering setup</p>
-</td><td class="codes"><pre class="brush: clojure">(defn init-grid-rendering
-  [app]
-  (set-request-anim-frame-function)
-  (.requestAnimFrame js/window (fn [] (run-frame app (.getTime (js/Date.))))))</pre></td></tr><tr><td class="docs"><p>The OM definition of the controls (Start/Stop and Reset)</p>
-</td><td class="codes"><pre class="brush: clojure">(defn controls-component
-  [app _]
+        (doseq [location-color repaint-instructions] (put! render-chan location-color))
+        (.requestAnimFrame js/window (fn [] (run-frame app render-chan current-time))))
+      (.requestAnimFrame js/window (fn [] (run-frame app render-chan last-time))))))</pre></td></tr><tr><td class="docs"><p>Renders an individual game checkbox used to enable/disable that game, it sets up an on-click handler
+  for the checkbox that will pass an instruction onto the game control
+  <a href="https://github.com/clojure/core.async">core-async</a> channel that is passed as initial state to this
+  component by the controls conponent</p>
+</td><td class="codes"><pre class="brush: clojure">(defn- game-checkbox
+  [enabled-game _]
   (reify
-    om/IRender
-    (render [_]
+    om/IRenderState
+    (render-state [this {:keys [game-control-chan]}]
+      (let [[name enabled?] enabled-game]
+        (h/html
+          [:div {:class &quot;checkbox-div&quot;}
+           [:input {:type     &quot;checkbox&quot;
+                    :checked  enabled?
+                    :on-click #(put! game-control-chan [name (not enabled?)])}]
+           [:label {:class &quot;checkbox-label&quot;} name]
+           ])))))</pre></td></tr><tr><td class="docs"><p>The OM controls component (Start/Stop, Reset and enabling/disabling games). It is configured with the following
+  lifecycle stages:</p>
+
+<ol>
+<li><em>om/IInitState</em> sets up the initial state containing a
+<a href="https://github.com/clojure/core.async">core-async</a> channel to be used to pass control messages</li>
+<li><em>om/IWillMount</em> will, before the DOM is setup, initialise the enabled games global state and start the go loop
+for the control channel (this listens for the control messages indicating that a game has been
+enabled/disabled and updates the global state)</li>
+<li><em>om/IRenderState</em> sets up the DOM elements and passes the initial state containing the game control channel to
+the sub-component responsible for building the individual game enable/disable checkboxes</li>
+</ol>
+</td><td class="codes"><pre class="brush: clojure">(defn controls-component
+  [app owner]
+  (reify
+    om/IInitState
+    (init-state [_]
+      {:game-control-chan (chan)})
+    om/IWillMount
+    (will-mount [_]
+      (let [games (:games app)
+            enabled-games (:enabled-games app)
+            game-control-chan (om/get-state owner :game-control-chan)
+            initial-state (reduce (fn [acc game] (assoc acc (gamemodel/game-name @game) false)) {} games)]
+        (om/update! enabled-games initial-state)
+        (go (loop []
+              (let [[name enable] (&lt;! game-control-chan)
+                    new-enabled-games (assoc @enabled-games name enable)]
+                (om/update! enabled-games new-enabled-games)
+                (recur))))))
+    om/IRenderState
+    (render-state [owner {:keys [game-control-chan]}]
       (h/html
         [:div
          [:div {:id &quot;buttons&quot; :class &quot;btn-group btn-group-sm&quot; :role &quot;group&quot;}
-          [:button {:class &quot;btn btn-default&quot; :type &quot;button&quot; :on-click #(om/transact! app :run not)} (if (:run app) &quot;Stop&quot; &quot;Start&quot;)]
-          [:button {:class &quot;btn btn-default&quot; :type &quot;button&quot; :on-click #(reset-grid app)} &quot;Reset&quot;]]
-         ]))))</pre></td></tr><tr><td class="docs">
-</td><td class="codes"><pre class="brush: clojure">(defn grid-component [app _]
-  &quot;The OM definition of the grid canvas&quot;
+          [:button {:class &quot;btn btn-default&quot;
+                    :type &quot;button&quot;
+                    :on-click #(om/transact! app :run not)} (if (:run app) &quot;Stop&quot; &quot;Start&quot;)]
+          [:button {:class &quot;btn btn-default&quot;
+                    :type &quot;button&quot;
+                    :on-click #(reset-grid app)} &quot;Reset&quot;]]
+         [:div {:class &quot;games-div&quot;}
+          (om/build-all game-checkbox (:enabled-games app) {:init-state {:game-control-chan game-control-chan}})
+          ]
+         ]))))</pre></td></tr><tr><td class="docs"><p>The OM canvas component. It is configured with the following
+  lifecycle stages:</p>
+
+<ol>
+<li><em>om/IInitState</em> sets up the initial state containing a
+<a href="https://github.com/clojure/core.async">core-async</a> channel to be used to pass paint cell messages</li>
+<li><em>om/IWillMount</em> will, before the DOM is setup, start the go loop for the render channel
+(this listens for the paint messages and paints the corresponding cell on the canvas)</li>
+<li><em>om/IDidMount</em> will, after the DOM is setup, reset the grid and setup the required animation functions
+and the render channel.</li>
+<li><em>om/IRenderState</em> sets up the DOM elements.</li>
+</ol>
+</td><td class="codes"><pre class="brush: clojure">(defn grid-component
+  [app owner]
   (reify
+    om/IInitState
+    (init-state [_]
+      {:render-chan (chan)})
+    om/IWillMount
+    (will-mount [_]
+      (let [render-chan (om/get-state owner :render-chan)]
+        (go (loop []
+              (let [[cell color] (&lt;! render-chan)]
+                (paint-cell (:x cell) (:y cell) color)
+                (recur))))))
     om/IDidMount
     (did-mount [_]
-      (reset-grid app)
-      (handle-render-cell)
-      (init-grid-rendering app))
-    om/IRender
-    (render [_]
+      (let [render-chan (om/get-state owner :render-chan)]
+        (reset-grid app)
+        (set-request-anim-frame-function)
+        (.requestAnimFrame js/window (fn [] (run-frame app render-chan (.getTime (js/Date.)))))))
+    om/IRenderState
+    (render-state [_ _]
       (let [cells-wide (:cells-wide (:gridmodel @app))
             cells-high (:cells-high (:gridmodel @app))
             pxwidth (* cell-size cells-wide)
             pxheight (* cell-size cells-high)]
         (h/html
           [:div
-           [:canvas {:id &quot;canvas&quot; :class &quot;canvas&quot; :width pxwidth :height pxheight}]])))))</pre></td></tr><tr><td class="docs"><p>The hook into the DOM for the controls.</p>
+           [:canvas {:id &quot;canvas&quot;
+                     :class &quot;canvas&quot;
+                     :width pxwidth
+                     :height pxheight}]])))))</pre></td></tr><tr><td class="docs"><p>The hook into the DOM for the controls.</p>
 </td><td class="codes"><pre class="brush: clojure">(om/root controls-component app-state
          {:target (.getElementById js/document &quot;controls&quot;)})</pre></td></tr><tr><td class="docs"><p>The hook into the DOM for the grid canvas.</p>
 </td><td class="codes"><pre class="brush: clojure">(om/root grid-component app-state
@@ -3091,7 +3151,7 @@ to pass the messages of what cells need re-painting.</p>
 <a href="https://en.wikipedia.org/wiki/Langton's_ant" title="Langton Ant">wikipedia</a> page.</p>
 </td><td class="codes"><pre class="brush: clojure">(ns gridlife.langton
   (:require [gridlife.gridmodel :as model]
-            [gridlife.gamemodel :as gamemodel]))</pre></td></tr><tr><td class="docs"><p>Declare the record type that represents the Langton Ant, a location and a heading (compass).
+            [gridlife.gamemodel :as gamemodel]))</pre></td></tr><tr><td class="docs"><p>Declare the record type that represents the Langton Ant i.e. a location and a heading (compass).
 The record implements the gamemodel/game Protocol to implement the behaviour of this game
 in the tick function.</p>
 </td><td class="codes"><pre class="brush: clojure">(defrecord LangtonAnt [location heading]
@@ -3100,7 +3160,7 @@ in the tick function.</p>
   (to-str [_] (str &quot;Langton's Ant: &quot;) location &quot;, &quot; heading)
   (tick [_ gridmodel]
     (let [model (:model gridmodel)
-          cells-wide (:cells-wide gridmodel) 
+          cells-wide (:cells-wide gridmodel)
           cells-high (:cells-high gridmodel)
           current-cell-contents (get model location)
           new-cell-contents (model/toggle-color current-cell-contents)
@@ -3112,7 +3172,27 @@ in the tick function.</p>
       [(assoc gridmodel :model new-model) new-ant [[new-location &quot;red&quot;] [location (name new-cell-contents)]]])))</pre></td></tr><tr><td class="docs"><p>Create a fresh ant at the specified location</p>
 </td><td class="codes"><pre class="brush: clojure">(defn new-ant
   [start-location]
-  (LangtonAnt. start-location :north))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr></table><div class="footer">Generated by <a href="https://github.com/gdeer81/marginalia">Marginalia</a>.&nbsp;&nbsp;Syntax highlighting provided by Alex Gorbatchev's <a href="http://alexgorbatchev.com/SyntaxHighlighter/">SyntaxHighlighter</a><div id="floating-toc"><ul><li class="floating-toc-li" id="floating-toc_gridlife.gamemodel">gridlife.gamemodel</li><li class="floating-toc-li" id="floating-toc_gridlife.gridmodel">gridlife.gridmodel</li><li class="floating-toc-li" id="floating-toc_gridlife.gridui">gridlife.gridui</li><li class="floating-toc-li" id="floating-toc_gridlife.langton">gridlife.langton</li></ul></div></div><script type="text/javascript">SyntaxHighlighter.defaults['gutter'] = false;
+  (LangtonAnt. start-location :north))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#gridlife.random" name="gridlife.random"><h1 class="project-name">gridlife.random</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(ns gridlife.random
+  (:require [gridlife.gridmodel :as model]
+            [gridlife.gamemodel :as gamemodel]))</pre></td></tr><tr><td class="docs"><p>Declare the record type that represents the Langton Ant, a location and a heading (compass).
+The record implements the gamemodel/game Protocol to implement the behaviour of this game
+in the tick function.</p>
+</td><td class="codes"><pre class="brush: clojure">(defrecord RandomNoise []
+  gamemodel/game
+  (game-name [_] &quot;Random Noise&quot;)
+  (to-str [_] &quot;Random Noise&quot;)
+  (tick [this gridmodel]
+    (let [model (:model gridmodel)
+          cells-wide (:cells-wide gridmodel)
+          cells-high (:cells-high gridmodel)
+          random-coord (model/random-grid-coord cells-wide cells-high)
+          new-color (model/toggle-if-color (get model random-coord))
+          new-model (assoc model random-coord new-color)]
+      [(assoc gridmodel :model new-model) this [[random-coord (name new-color)]]])))</pre></td></tr><tr><td class="docs"><p>Create a fresh random noise game</p>
+</td><td class="codes"><pre class="brush: clojure">(defn new-random-noise
+  []
+  (RandomNoise.))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr></table><div class="footer">Generated by <a href="https://github.com/gdeer81/marginalia">Marginalia</a>.&nbsp;&nbsp;Syntax highlighting provided by Alex Gorbatchev's <a href="http://alexgorbatchev.com/SyntaxHighlighter/">SyntaxHighlighter</a><div id="floating-toc"><ul><li class="floating-toc-li" id="floating-toc_gridlife.gamemodel">gridlife.gamemodel</li><li class="floating-toc-li" id="floating-toc_gridlife.gridmodel">gridlife.gridmodel</li><li class="floating-toc-li" id="floating-toc_gridlife.gridui">gridlife.gridui</li><li class="floating-toc-li" id="floating-toc_gridlife.langton">gridlife.langton</li><li class="floating-toc-li" id="floating-toc_gridlife.random">gridlife.random</li></ul></div></div><script type="text/javascript">SyntaxHighlighter.defaults['gutter'] = false;
 SyntaxHighlighter.all();
 
 // hackity hack
