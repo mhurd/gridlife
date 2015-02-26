@@ -23,12 +23,9 @@
           new-model (assoc model location new-cell-contents)
           new-location (model/new-location cells-wide cells-high location new-heading 1)
           new-ant (LangtonAnt. new-location new-heading)]
-      [(assoc gridmodel :model new-model) new-ant [[new-location "red"] [location (name new-cell-contents)]]]
-      )
-    ))
+      [(assoc gridmodel :model new-model) new-ant [[new-location "red"] [location (name new-cell-contents)]]])))
 
 (defn new-ant
   "Create a fresh ant at the specified location"
   [start-location]
-  (LangtonAnt. start-location :north)
-  )
+  (LangtonAnt. start-location :north))

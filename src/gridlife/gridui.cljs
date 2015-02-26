@@ -5,13 +5,13 @@
 (ns gridlife.gridui
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require
-    [om.core :as om :include-macros true]
-    [sablono.core :as h :refer-macros [html]]
-    [gridlife.gridmodel :as model :refer [GridModel]]
-    [gridlife.langton :as langton]
-    [gridlife.random :as random]
-    [cljs.core.async :refer [put! chan <!]]
-    [gridlife.gamemodel :as gamemodel :refer [game]]))
+   [om.core :as om :include-macros true]
+   [sablono.core :as h :refer-macros [html]]
+   [gridlife.gridmodel :as model :refer [GridModel]]
+   [gridlife.langton :as langton]
+   [gridlife.random :as random]
+   [cljs.core.async :refer [put! chan <!]]
+   [gridlife.gamemodel :as gamemodel :refer [game]]))
 
 ;; enable printing to the Javascript console
 (enable-console-print!)
@@ -29,8 +29,7 @@
   (let [keys (for [x (range 0 cells-wide)
                    y (range 0 cells-high)]
                {:x x, :y y})]
-    (zipmap keys (repeat :white)))
-  )
+    (zipmap keys (repeat :white))))
 
 (defn default-ant
   "Create a new default Langton Ant record (starts in the middle of the grid)"
@@ -40,14 +39,12 @@
 (defn default-games
   "Get the default game strategies available for this grid"
   []
-  [(random/new-random-noise) (default-ant)]
-  )
+  [(random/new-random-noise) (default-ant)])
 
 (defn empty-gridmodel
   "Creates an empty grid model (map of location to contents)"
   []
-  (model/GridModel. (empty-model cells-wide cells-high) cells-wide cells-high)
-  )
+  (model/GridModel. (empty-model cells-wide cells-high) cells-wide cells-high))
 
 ;; The key application state used by OM/react, holds the following information:
 ;;
@@ -58,8 +55,7 @@
 (def app-state (atom {:gridmodel     (empty-gridmodel),
                       :games         (default-games),
                       :enabled-games {},
-                      :run           false
-                      }))
+                      :run           false}))
 
 (defn paint-cell
   "Paints the cell at the specified x/y location the specified color"
@@ -70,16 +66,14 @@
         context (.getContext canvas "2d")]
     (set! (.-fillStyle context) color)
     (.fillRect context x-px-pos y-px-pos cell-size cell-size)
-    (.stroke context))
-  )
+    (.stroke context)))
 
 (defn reset-grid
   "Resets the grid (empty gridmodel and default ant)"
   [app]
   (om/update! app :gridmodel (empty-gridmodel))
   (om/update! app :games (default-games))
-  (doseq [location (keys (:model (:gridmodel app)))] (paint-cell (:x location) (:y location) "white"))
-  )
+  (doseq [location (keys (:model (:gridmodel app)))] (paint-cell (:x location) (:y location) "white")))
 
 (defn set-request-anim-frame-function
   "Either sets up the standard requestAnimationFrame functions specific to the current
@@ -90,8 +84,7 @@
         moz-function (.-mozRequestAnimationFrame js/window)
         fallback-function (fn [callback] (.setTimeout js/window callback (/ 1000 30)))
         use (or std-function webkit-function moz-function fallback-function)]
-    (set! (.-requestAnimFrame js/window) use)
-    ))
+    (set! (.-requestAnimFrame js/window) use)))
 
 (defn- reduce-games
   "Reduces a list of games by moving them forward one tick, taking the new gridmodel to
@@ -106,9 +99,7 @@
         [next-gridmodel new-game new-repaint-instructions] (if enabled?
                                                              (gamemodel/tick game gridmodel)
                                                              [gridmodel game repaint-instructions])]
-    [next-gridmodel (cons new-game games) (into repaint-instructions new-repaint-instructions)]
-    )
-  )
+    [next-gridmodel (cons new-game games) (into repaint-instructions new-repaint-instructions)]))
 
 (defn run-frame
   "Normalises the calls from the animation function to the specified maximum moves
@@ -127,11 +118,8 @@
         (om/update! app :gridmodel new-gridmodel)
         (om/update! app :games new-games)
         (doseq [location-color repaint-instructions] (put! render-chan location-color))
-        (.requestAnimFrame js/window (fn [] (run-frame app render-chan current-time)))
-        )
-      (.requestAnimFrame js/window (fn [] (run-frame app render-chan last-time)))
-      ))
-  )
+        (.requestAnimFrame js/window (fn [] (run-frame app render-chan current-time))))
+      (.requestAnimFrame js/window (fn [] (run-frame app render-chan last-time))))))
 
 (defn- game-checkbox
   "Renders an individual game checkbox used to enable/disable that game, it sets up an on-click handler
@@ -144,14 +132,11 @@
     (render-state [this {:keys [game-control-chan]}]
       (let [[name enabled?] enabled-game]
         (h/html
-          [:div {:class "checkbox-div"}
-           [:input {:type     "checkbox"
-                    :checked  enabled?
-                    :on-click #(put! game-control-chan [name (not enabled?)])}]
-           [:label {:class "checkbox-label"} name]
-           ]
-          ))))
-  )
+         [:div {:class "checkbox-div"}
+          [:input {:type     "checkbox"
+                   :checked  enabled?
+                   :on-click #(put! game-control-chan [name (not enabled?)])}]
+          [:label {:class "checkbox-label"} name]])))))
 
 (defn controls-component
   "The OM controls component (Start/Stop, Reset and enabling/disabling games). It is configured with the following
@@ -184,18 +169,16 @@
     om/IRenderState
     (render-state [owner {:keys [game-control-chan]}]
       (h/html
-        [:div
-         [:div {:id "buttons" :class "btn-group btn-group-sm" :role "group"}
-          [:button {:class "btn btn-default"
-                    :type "button"
-                    :on-click #(om/transact! app :run not)} (if (:run app) "Stop" "Start")]
-          [:button {:class "btn btn-default"
-                    :type "button"
-                    :on-click #(reset-grid app)} "Reset"]]
-         [:div {:class "games-div"}
-          (om/build-all game-checkbox (:enabled-games app) {:init-state {:game-control-chan game-control-chan}})
-          ]
-         ]))))
+       [:div
+        [:div {:id "buttons" :class "btn-group btn-group-sm" :role "group"}
+         [:button {:class "btn btn-default"
+                   :type "button"
+                   :on-click #(om/transact! app :run not)} (if (:run app) "Stop" "Start")]
+         [:button {:class "btn btn-default"
+                   :type "button"
+                   :on-click #(reset-grid app)} "Reset"]]
+        [:div {:class "games-div"}
+         (om/build-all game-checkbox (:enabled-games app) {:init-state {:game-control-chan game-control-chan}})]]))))
 
 (defn grid-component
   "The OM canvas component. It is configured with the following
@@ -233,12 +216,11 @@
             pxwidth (* cell-size cells-wide)
             pxheight (* cell-size cells-high)]
         (h/html
-          [:div
-           [:canvas {:id "canvas"
-                     :class "canvas"
-                     :width pxwidth
-                     :height pxheight}]]
-          )))))
+         [:div
+          [:canvas {:id "canvas"
+                    :class "canvas"
+                    :width pxwidth
+                    :height pxheight}]])))))
 
 ;; The hook into the DOM for the controls.
 (om/root controls-component app-state

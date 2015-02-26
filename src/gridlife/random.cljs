@@ -16,12 +16,9 @@
           random-coord (model/random-grid-coord cells-wide cells-high)
           new-color (model/toggle-if-color (get model random-coord))
           new-model (assoc model random-coord new-color)]
-      [(assoc gridmodel :model new-model) this [[random-coord (name new-color)]]]
-      )
-    ))
+      [(assoc gridmodel :model new-model) this [[random-coord (name new-color)]]])))
 
 (defn new-random-noise
   "Create a fresh random noise game"
   []
-  (RandomNoise.)
-  )
+  (RandomNoise.))

@@ -28,8 +28,7 @@
         index (f current-index 1)
         new-index (mod index 4)
         new-heading (get index->headings new-index)]
-    new-heading
-    ))
+    new-heading))
 
 (defn- turn-right
   "Turn 90-degrees right from the compass heading"
@@ -44,45 +43,38 @@
 (defn random-int
   "Return a random Integer between min and max (inclusive)"
   [min max]
-  (+ min (.floor js/Math (* (.random js/Math) (+ 1 (- max min)))))
-  )
+  (+ min (.floor js/Math (* (.random js/Math) (+ 1 (- max min))))))
 
 (defn random
   "Get a random number from 0 to size (exclusive)."
   [size]
-  (random-int 0, (- size 1))
-  )
+  (random-int 0, (- size 1)))
 
 (defn random-grid-coord
   "Return a random grid coordinate given the specified grid dimensions
   in the form ```{:x 1 :y 1}```"
   [xsize ysize]
-  {:x (random xsize) :y (random ysize)}
-  )
+  {:x (random xsize) :y (random ysize)})
 
 (defn white?
   "Are the contents ```:white```?"
   [contents]
-  (= contents :white)
-  )
+  (= contents :white))
 
 (defn black?
   "Are the contents ```:black```?"
   [contents]
-  (= contents :black)
-  )
+  (= contents :black))
 
 (defn toggle-color
   "Flip ```:black``` to ```:white``` and vice-versa"
   [color]
-  (if (white? color) :black :white)
-  )
+  (if (white? color) :black :white))
 
 (defn color?
   "Determines if the specified contents are a color (```:black``` or ```:white```)"
   [contents]
-  (or (white? contents) (black? contents))
-  )
+  (or (white? contents) (black? contents)))
 
 (defn toggle-if-color
   "Flip ```:black``` to ```:white``` and vice-versa but only if the contents are valid"
@@ -99,12 +91,9 @@
     {:north {:x old-x :y (mod (- old-y distance) cells-high)}
      :south {:x old-x :y (mod (+ old-y distance) cells-high)}
      :east  {:x (mod (+ old-x distance) cells-wide) :y old-y}
-     :west  {:x (mod (- old-x distance) cells-wide) :y old-y}
-     }
-    ))
+     :west  {:x (mod (- old-x distance) cells-wide) :y old-y}}))
 
 (defn new-location
   "Get the new location given the grid, the current location, the compass heading and the distance"
   [cells-wide cells-high location heading distance]
-  (get (compass cells-wide cells-high location distance) heading)
-  )
+  (get (compass cells-wide cells-high location distance) heading))

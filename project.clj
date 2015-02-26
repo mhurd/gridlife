@@ -13,7 +13,11 @@
                            [sablono "0.2.22"]]
 
             :plugins [[lein-cljsbuild "1.0.3"]
-                      [lein-marginalia "0.8.0"]]
+                      ;; lein marg --dir resources/public/docs src/gridlife/gamemodel.cljs
+                      [lein-marginalia "0.8.0"]
+                      ;; https://github.com/weavejester/cljfmt/
+                      ;; lein cljfmt check, lein cljfmt fix
+                      [lein-cljfmt "0.1.10"]]
 
             :hooks [leiningen.cljsbuild]
 
